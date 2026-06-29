@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>雪球冒險 2.5D - 團隊競技冰上躲避球</title>
+    <title>雪球冒險 2.5D - 街機傳奇競技場</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts for retro/arcade look -->
+    <!-- Google Fonts for arcade look -->
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         body {
@@ -14,20 +14,20 @@
             background-color: #030712;
             user-select: none;
         }
-        /* 復古發光與動畫特效 */
+        /* 街機發光與動態特效 */
         .arcade-neon-blue {
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.7);
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.6);
             border-color: #38bdf8;
         }
-        .arcade-neon-red {
-            box-shadow: 0 0 15px rgba(239, 68, 68, 0.7);
-            border-color: #ef4444;
-        }
-        .text-glow-sky {
-            text-shadow: 0 0 8px rgba(56, 189, 248, 0.8);
+        .arcade-neon-gold {
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.6);
+            border-color: #fbbf24;
         }
         .text-glow-yellow {
             text-shadow: 0 0 10px rgba(251, 191, 36, 0.9), 0 0 2px #000;
+        }
+        .text-glow-sky {
+            text-shadow: 0 0 8px rgba(56, 189, 248, 0.8);
         }
         /* 隱藏滾動條 */
         ::-webkit-scrollbar {
@@ -47,17 +47,15 @@
     <!-- React 根目錄 -->
     <div id="root" class="w-full max-w-7xl"></div>
 
-    <!-- 載入 React -->
+    <!-- 載入 React & Babel -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <!-- Babel 用於編譯 JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <!-- React 應用代碼 -->
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // ==================== 預設靜態與初始數據 ====================
         const PRESET_FRIENDS = [
             { id: "f1", name: "冰雪奇緣小艾", level: 14, guild: "極地冰晶社", status: "在線中" },
             { id: "f2", name: "滾雪球大師", level: 28, guild: "極速超跑閣", status: "大廳中" },
@@ -72,29 +70,26 @@
         ];
 
         const INITIAL_SHOP_ITEMS = [
-            { id: "shield", name: "戰略防護罩", price: 30, desc: "可在戰場擋住一次雪球攻擊，最多可儲備 3 個（遊戲內 F1-F3 鍵即時觸發）", type: "shield", system: true },
-            { id: "ring", name: "真愛承諾戒指", price: 99, desc: "用於向好友表白結為伴侶。享有雙人專屬BUFF：經驗獲得+10%、勝利點數額外+10元、失敗額外+5元！", type: "ring", system: true },
-            { id: "speed_boots", name: "疾風雪鞋", price: 120, desc: "永久提升角色移動速度 20%（極速閃避專用）", type: "speed", system: true },
-            { id: "golden_coat", name: "土豪金保暖大衣", price: 200, desc: "將角色外觀改為尊貴璀璨黃金，金光四射閃耀賽場！", type: "skin_gold", system: true }
+            { id: "shield", name: "戰略防護罩", price: 30, desc: "可在戰場擋住一次雪球攻擊，最多可儲備 3 個（F1-F3 鍵觸發）", type: "shield" },
+            { id: "ring", name: "真愛承諾戒指", price: 99, desc: "用於向好友表白結為伴侶。享有雙人BUFF：經驗+10%、勝利點數+10、失敗+5！", type: "ring" },
+            { id: "speed_boots", name: "疾風雪鞋", price: 120, desc: "永久提升角色移動速度 20%（極速閃避專用）", type: "speed" },
+            { id: "golden_coat", name: "土豪金保暖大衣", price: 200, desc: "將角色外觀改為尊貴璀璨黃金，金光四射閃耀賽場！", type: "skin_gold" }
         ];
 
-        const BOT_NAMES = ["哈士奇寶寶", "企鵝班長", "北極熊大叔", "冰原雪人阿光", "急凍草莓醬", "聖誕特工", "滑雪天才強尼", "寒冰大作戰", "急凍人阿爾法"];
+        const BOT_NAMES = ["雪山小精靈", "企鵝班長", "北極熊大叔", "冰原雪人阿光", "急凍草莓醬", "聖誕特工", "滑雪天才強尼", "急凍人阿爾法"];
         const GUEST_NAMES = ["雪原遊俠", "急凍奇兵", "冰河踏破者", "傲雪狂瀾", "冰晶流星"];
 
-        // 安全 parsing 函數，防止 parse 毀損的 LocalStorage
         const getSavedData = (key, defaultVal) => {
             try {
                 const saved = localStorage.getItem(key);
                 return saved ? JSON.parse(saved) : defaultVal;
             } catch (e) {
-                console.error("讀取本地數據失敗，已載入預設值:", key);
+                console.error("讀取 LocalStorage 失敗:", key);
                 return defaultVal;
             }
         };
 
-        // ==================== 主 React 組件 ====================
         function App() {
-            // --- 帳號與登入狀態 ---
             const [user, setUser] = useState(() => getSavedData("snow_user", null));
             const [regUser, setRegUser] = useState("");
             const [regPass, setRegPass] = useState("");
@@ -104,57 +99,56 @@
             const [authError, setAuthError] = useState("");
             const [authSuccess, setAuthSuccess] = useState("");
 
-            // --- 玩家屬性狀態 ---
+            // GM 後台狀態控制
+            const [isGM, setIsGM] = useState(true); // 預設使用者為 GM，使其可看見並操作 GM 管理後台
+            
+            // 玩家屬性狀態
             const [playerStats, setPlayerStats] = useState(() => {
                 return getSavedData("snow_player_stats", {
-                    points: 150, // 初始免費贈送 150 點
-                    level: 1,
-                    exp: 0,
-                    shields: 1,  // 初始擁有 1 個防護罩 (上限 3 個)
-                    rings: 0,    // 初始擁有 0 個戒指
-                    partner: "", // 初始伴侶為空
-                    guildName: "", 
-                    guildTitle: "新手冒險者", 
+                    points: 500, // 給予充足初始點數以便測試商城
+                    level: 5,
+                    exp: 30,
+                    shields: 2,
+                    rings: 1,
+                    partner: "暖冬熱可可", // 預設伴侶
+                    guildName: "極地冰晶社", 
+                    guildTitle: "極地長老", 
                     purchasedItems: [] 
                 });
             });
 
-            // --- 商店動態商品 ---
             const [shopItems, setShopItems] = useState(() => getSavedData("snow_shop_items", INITIAL_SHOP_ITEMS));
             const [newItemName, setNewItemName] = useState("");
             const [newItemPrice, setNewItemPrice] = useState("");
             const [newItemDesc, setNewItemDesc] = useState("");
             const [newItemType, setNewItemType] = useState("cosmetic");
 
-            // --- 好友與公會系統 ---
             const [friends, setFriends] = useState(() => getSavedData("snow_friends", PRESET_FRIENDS));
             const [newFriendName, setNewFriendName] = useState("");
             const [guilds, setGuilds] = useState(() => getSavedData("snow_guilds", PRESET_GUILDS));
             const [newGuildName, setNewGuildName] = useState("");
             const [customTitle, setCustomTitle] = useState("");
 
-            // --- 導覽分頁 ---
-            const [activeTab, setActiveTab] = useState("lobby"); // lobby, shop, guild, friends, profile
+            // 告白系統
+            const [confessTarget, setConfessTarget] = useState(null);
+            const [confessText, setConfessText] = useState("");
 
-            // --- 競技房間匹配大廳狀態 ---
-            const [matchSize, setMatchSize] = useState(2); // 1 代表 1v1, 2 代表 2v2, 3 代表 3v3
-            const [matchType, setMatchType] = useState("AI"); // "AI" 電腦配對, "ONLINE" 真人配對
+            const [activeTab, setActiveTab] = useState("lobby"); 
+
+            // 競技房間匹配狀態
+            const [matchSize, setMatchSize] = useState(2); 
+            const [matchType, setMatchType] = useState("AI"); 
             const [blueTeam, setBlueTeam] = useState(["玩家", null, null]); 
             const [redTeam, setRedTeam] = useState([null, null, null]); 
             const [lobbyMessage, setLobbyMessage] = useState("");
             
-            // --- 遊戲運行狀態 ---
+            // 遊戲執行狀態
             const [isMatching, setIsMatching] = useState(false);
             const [matchTimer, setMatchTimer] = useState(0);
             const [gameActive, setGameActive] = useState(false);
             const [gameResult, setGameResult] = useState(null); 
             const [showCustomModal, setShowCustomModal] = useState(null); 
 
-            // --- 伴侶告白特有狀態 ---
-            const [confessTarget, setConfessTarget] = useState(null);
-            const [confessText, setConfessText] = useState("");
-
-            // ==================== LocalStorage 儲存效果同步 ====================
             useEffect(() => {
                 if (user) {
                     localStorage.setItem("snow_user", JSON.stringify(user));
@@ -179,7 +173,6 @@
                 localStorage.setItem("snow_guilds", JSON.stringify(guilds));
             }, [guilds]);
 
-            // ==================== 人性化輔助函數 ====================
             const triggerAlert = (title, msg) => {
                 setShowCustomModal({ title, msg });
             };
@@ -192,26 +185,21 @@
                 
                 setUser(guestUser);
                 setBlueTeam([guestName, null, null]);
-                setAuthSuccess(`已使用遊客身分「${guestName}」登入！`);
+                setAuthSuccess(`已使用玩家身分「${guestName}」登入！`);
                 setAuthError("");
             };
 
-            // ==================== 登入 / 註冊系統 ====================
             const handleRegister = (e) => {
                 e.preventDefault();
                 if (!regUser || !regPass || !regEmail) {
-                    setAuthError("請確實填寫所有必填欄位！");
-                    return;
-                }
-                if (regUser.length > 10) {
-                    setAuthError("使用者帳號長度上限為 10 個字元！");
+                    setAuthError("請填寫所有欄位！");
                     return;
                 }
                 const newUserObj = { username: regUser, password: regPass, email: regEmail, isGuest: false };
                 setUser(newUserObj);
                 setBlueTeam([regUser, null, null]);
                 setAuthError("");
-                setAuthSuccess("恭喜您註冊成功，並已自動為您登入冰雪大廳！");
+                setAuthSuccess("註冊成功！已自動登入。");
             };
 
             const handleLogin = (e) => {
@@ -224,36 +212,24 @@
                 setUser(mockUserObj);
                 setBlueTeam([loginUser, null, null]);
                 setAuthError("");
-                setAuthSuccess(`歡迎回來，尊敬的極地戰士 ${loginUser}！`);
+                setAuthSuccess(`歡迎回來，極地戰士 ${loginUser}！`);
             };
 
             const handleLogout = () => {
                 setUser(null);
                 setAuthSuccess("");
                 setAuthError("");
-                setPlayerStats({
-                    points: 150,
-                    level: 1,
-                    exp: 0,
-                    shields: 1,
-                    rings: 0,
-                    partner: "",
-                    guildName: "",
-                    guildTitle: "新手冒險者",
-                    purchasedItems: []
-                });
                 setBlueTeam(["玩家", null, null]);
                 setRedTeam([null, null, null]);
             };
 
-            // ==================== 商城系統 ====================
             const buyItem = (item) => {
                 if (playerStats.points < item.price) {
-                    triggerAlert("點數餘額不足", `您的點數不夠購買 ${item.name}！ (商品價格 ${item.price} 元，您目前擁有 ${playerStats.points} 元)`);
+                    triggerAlert("點數不足", `您的點數不夠購買 ${item.name}！ (商品價格 ${item.price} 元，您目前擁有 ${playerStats.points} 元)`);
                     return;
                 }
 
-                if (item.type === "shield") {
+                if (item.id === "shield") {
                     if (playerStats.shields >= 3) {
                         triggerAlert("儲備已達上限", "每名戰士最多只能攜帶 3 個防護罩！請進入戰場使用後再行補充。");
                         return;
@@ -263,18 +239,17 @@
                         points: prev.points - item.price,
                         shields: prev.shields + 1
                     }));
-                    triggerAlert("購買成功", `已成功購買防護罩！當前攜帶量：${playerStats.shields + 1} / 3。在戰場按下 F1~F3 可立刻開啟！`);
-                } else if (item.type === "ring") {
+                    triggerAlert("購買成功", `已成功購買防護罩！當前攜帶量：${playerStats.shields + 1} / 3`);
+                } else if (item.id === "ring") {
                     setPlayerStats(prev => ({
                         ...prev,
                         points: prev.points - item.price,
                         rings: (prev.rings || 0) + 1
                     }));
-                    triggerAlert("購買成功 💍", `您成功購得真愛承諾戒指 1 個！可用於在好友列表向心儀的好友告白與締結伴侶關係。當前庫存：${(playerStats.rings || 0) + 1} 個。`);
+                    triggerAlert("購買成功 💍", `您成功購得真愛承諾戒指 1 個！當前庫存：${(prev.rings || 0) + 1} 個。`);
                 } else {
-                    // 永久屬性裝備，防止重覆購買
                     if (playerStats.purchasedItems.includes(item.id)) {
-                        triggerAlert("重複購買警告", `您已擁有 ${item.name}，不需重複購買！屬性加成已自動生效。`);
+                        triggerAlert("重複購買", `您已擁有 ${item.name}，屬性加成已自動生效。`);
                         return;
                     }
                     setPlayerStats(prev => ({
@@ -286,22 +261,24 @@
                 }
             };
 
-            const addCustomItem = (e) => {
+            const handleUpdatePrice = (itemId, newPrice) => {
+                const parsedPrice = parseInt(newPrice, 10);
+                if (isNaN(parsedPrice) || parsedPrice < 0) return;
+                setShopItems(prev => prev.map(item => item.id === itemId ? { ...item, price: parsedPrice } : item));
+            };
+
+            const addCustomItemGM = (e) => {
                 e.preventDefault();
                 if (!newItemName || !newItemPrice) {
-                    triggerAlert("新增商品失敗", "商品名稱與金額為必填項目！");
+                    triggerAlert("GM 提示", "商品名稱與金額為必填項目！");
                     return;
                 }
                 const cost = parseInt(newItemPrice, 10);
-                if (isNaN(cost) || cost <= 0) {
-                    triggerAlert("金額輸入錯誤", "請輸入大於 0 的正整數金額。");
-                    return;
-                }
                 const newItem = {
-                    id: "custom_" + Date.now(),
+                    id: "gm_" + Date.now(),
                     name: newItemName,
                     price: cost,
-                    desc: newItemDesc || "公會自製冰上道具，好用又實惠！",
+                    desc: newItemDesc || "GM 特製傳奇裝備，蘊藏極地神祕法術！",
                     type: newItemType,
                     system: false
                 };
@@ -309,26 +286,23 @@
                 setNewItemName("");
                 setNewItemPrice("");
                 setNewItemDesc("");
-                triggerAlert("商品上架成功", `【${newItemName}】已正式在極地商城發售！`);
+                triggerAlert("GM 操作成功", `新增自定義商品：【${newItemName}】已正式上架！`);
             };
 
-            const deleteCustomItem = (id) => {
+            const deleteItemGM = (id) => {
                 setShopItems(prev => prev.filter(item => item.id !== id));
+                triggerAlert("GM 操作成功", "商品已從商城中徹底刪除！");
             };
 
-            // ==================== 公會模組 ====================
             const createGuild = (e) => {
                 e.preventDefault();
-                if (!newGuildName.trim()) {
-                    triggerAlert("公會創建失敗", "公會名稱不可為空！");
-                    return;
-                }
+                if (!newGuildName.trim()) return;
                 if (playerStats.guildName) {
-                    triggerAlert("公會創建失敗", "您目前已隸屬於其他公會，請先退會再試！");
+                    triggerAlert("公會提示", "您目前已隸屬於其他公會，請先退會再試！");
                     return;
                 }
                 if (playerStats.points < 100) {
-                    triggerAlert("點數不足", `創立新公會需花費 100 元點數，您目前僅有 ${playerStats.points} 元。`);
+                    triggerAlert("點數不足", `創立公會需花費 100 元點數。`);
                     return;
                 }
 
@@ -348,114 +322,72 @@
                 };
 
                 setGuilds(prev => [newGuildObj, ...prev]);
-                setCustomTitle("公會長");
-                setNewGuildName("");
-                triggerAlert("公會建立成功！", `恭喜您創立了公會【${newGuildName}】，您已被任命為最高領導人「公會長」！`);
+                triggerAlert("公會建立成功！", `恭喜您創立了公會【${newGuildName}】！`);
+            };
+
+            const toggleJoinGuild = (gName) => {
+                if (playerStats.guildName === gName) {
+                    // 點擊已加入的公會 -> 退出
+                    setPlayerStats(prev => ({
+                        ...prev,
+                        guildName: "",
+                        guildTitle: "新手冒險者"
+                    }));
+                    setGuilds(prev => prev.map(g => g.name === gName ? { ...g, members: Math.max(1, g.members - 1) } : g));
+                    triggerAlert("退出公會", `您已正式退出【${gName}】公會。`);
+                } else {
+                    // 點擊其他公會 -> 加入 (會先退出原本的)
+                    const prevGuild = playerStats.guildName;
+                    setPlayerStats(prev => ({
+                        ...prev,
+                        guildName: gName,
+                        guildTitle: "極地骨幹"
+                    }));
+                    setGuilds(prev => prev.map(g => {
+                        if (g.name === gName) return { ...g, members: g.members + 1 };
+                        if (g.name === prevGuild) return { ...g, members: Math.max(1, g.members - 1) };
+                        return g;
+                    }));
+                    triggerAlert("加入公會", `您已成功加入【${gName}】公會！`);
+                }
             };
 
             const updateLeaderTitle = (e) => {
                 e.preventDefault();
-                if (!customTitle.trim()) {
-                    triggerAlert("修改職稱失敗", "自定義職稱不可為空！");
+                if (!customTitle.trim() || customTitle.length > 5) {
+                    triggerAlert("修改失敗", "職稱長度上限為 5 個字！");
                     return;
                 }
-                if (customTitle.length > 5) {
-                    triggerAlert("字數限制", "職稱長度上限為 5 個字（中英文皆算）！");
-                    return;
-                }
-                setPlayerStats(prev => ({
-                    ...prev,
-                    guildTitle: customTitle
-                }));
-                triggerAlert("職稱更動成功", `您的會內頭銜已更新為：【${customTitle}】`);
+                setPlayerStats(prev => ({ ...prev, guildTitle: customTitle }));
+                triggerAlert("職稱更動成功", `您的頭銜已更新為：【${customTitle}】`);
             };
 
-            const joinGuild = (gName) => {
-                if (playerStats.guildName) {
-                    triggerAlert("無法加入公會", "您目前已在一個公會中了，無法複選。");
-                    return;
-                }
-                setPlayerStats(prev => ({
-                    ...prev,
-                    guildName: gName,
-                    guildTitle: "極地骨幹"
-                }));
-                setGuilds(prev => prev.map(g => g.name === gName ? { ...g, members: g.members + 1 } : g));
-                triggerAlert("加入成功", `您已成功加入【${gName}】，共同爭奪最強公會榮譽！`);
-            };
-
-            const leaveGuild = () => {
-                const myCurGuild = playerStats.guildName;
-                if (!myCurGuild) return;
-                setPlayerStats(prev => ({
-                    ...prev,
-                    guildName: "",
-                    guildTitle: "新手冒險者"
-                }));
-                setGuilds(prev => prev.map(g => g.name === myCurGuild ? { ...g, members: Math.max(1, g.members - 1) } : g));
-                triggerAlert("退出公會", `您已正式退出【${myCurGuild}】，重新成為自由人。`);
-            };
-
-            // ==================== 好友模組 ====================
-            const addFriend = (e) => {
-                e.preventDefault();
-                const cleanName = newFriendName.trim();
-                if (!cleanName) return;
-                if (friends.some(f => f.name.toLowerCase() === cleanName.toLowerCase())) {
-                    triggerAlert("添加好友失敗", "此人已在您的在線好友列表中。");
-                    return;
-                }
-                const randomLvl = Math.floor(Math.random() * 25) + 3;
-                const newFObj = {
-                    id: "friend_" + Date.now(),
-                    name: cleanName,
-                    level: randomLvl,
-                    guild: Math.random() > 0.4 ? "極地冰晶社" : "無公會",
-                    status: "在大廳中"
-                };
-                setFriends(prev => [...prev, newFObj]);
-                setNewFriendName("");
-                triggerAlert("新增好友", `已成功添加玩家 ${cleanName} 為極地好友！`);
-            };
-
-            const removeFriend = (id) => {
-                setFriends(prev => prev.filter(f => f.id !== id));
-            };
-
-            // ==================== 伴侶告白追求系統 ====================
             const handleConfessSubmit = (e) => {
                 e.preventDefault();
                 if (!confessTarget) return;
 
                 if (!playerStats.rings || playerStats.rings < 1) {
-                    triggerAlert("追求失敗 💍", "您的真愛承諾戒指數量不足！請先前往「冰雪商城」花費 99 元點數購買真愛戒指。");
+                    triggerAlert("追求失敗 💍", "您需要先去商城購買戒指！");
                     return;
                 }
 
-                // 消耗戒指、結為伴侶
                 setPlayerStats(prev => ({
                     ...prev,
                     rings: Math.max(0, prev.rings - 1),
                     partner: confessTarget.name
                 }));
 
-                const targetName = confessTarget.name;
+                const name = confessTarget.name;
                 setConfessTarget(null);
                 setConfessText("");
-
-                triggerAlert(
-                    "❤️ 追求成功，情投意合 ❤️",
-                    `在漫天風雪中，你單膝下跪向 ${targetName} 遞出了真愛戒指，並深情告白：\n「${confessText || "願意與我共度這趟極地冒險嗎？"}」\n\n${targetName} 被你的真情表白打動，羞紅了臉點點頭，欣然接受了你的求婚戒指！\n\n恭喜你們結為極地伴侶！從此享有永久BUFF：經驗值獲取 +10%、勝利獲取額外 +10 元點數、失敗獲取額外 +5 元點數！`
-                );
+                triggerAlert("❤️ 追求成功 ❤️", `在漫天風雪中，${name} 欣然接受了您的求婚戒指！\n\n結為伴侶！經驗+10%、勝利額外+10點數、失敗額外+5點數！`);
             };
 
-            // ==================== 席位管理（紅藍陣營自選與調配） ====================
             const handleSwitchTeam = (side, index) => {
                 const myName = user ? user.username : "玩家";
                 let newBlue = [...blueTeam];
                 let newRed = [...redTeam];
 
-                // 清除原位置
                 newBlue = newBlue.map(slot => slot === myName ? null : slot);
                 newRed = newRed.map(slot => slot === myName ? null : slot);
 
@@ -467,37 +399,27 @@
 
                 setBlueTeam(newBlue);
                 setRedTeam(newRed);
-                setLobbyMessage(`【席位調整】您已移至 ${side === "BLUE" ? "藍色方" : "紅色方"} 的第 ${index + 1} 位。`);
+                setLobbyMessage(`您已變更至 ${side === "BLUE" ? "藍方" : "紅方"} 第 ${index + 1} 席。`);
             };
 
             const inviteFriendToLobby = (friendName) => {
                 let newBlue = [...blueTeam];
                 let newRed = [...redTeam];
 
-                if (newBlue.includes(friendName) || newRed.includes(friendName)) {
-                    triggerAlert("重覆邀請", `【${friendName}】已在當前房間中，無法重覆加入！`);
-                    return;
-                }
+                if (newBlue.includes(friendName) || newRed.includes(friendName)) return;
 
-                // 優先分配進藍色方（同隊）
                 const emptyBlueIdx = newBlue.findIndex((slot, i) => slot === null && i < matchSize);
                 if (emptyBlueIdx !== -1) {
                     newBlue[emptyBlueIdx] = friendName;
                     setBlueTeam(newBlue);
-                    triggerAlert("好友入隊", `已成功邀請好友 ${friendName} 加入藍方隊伍。`);
                     return;
                 }
 
-                // 次之放入紅色方
                 const emptyRedIdx = newRed.findIndex((slot, i) => slot === null && i < matchSize);
                 if (emptyRedIdx !== -1) {
                     newRed[emptyRedIdx] = friendName;
                     setRedTeam(newRed);
-                    triggerAlert("好友加入對手", `因藍方已滿，已邀請 ${friendName} 加入紅色方對抗！`);
-                    return;
                 }
-
-                triggerAlert("房間席位已滿", "當前對戰模式之席位均已滿員！請切換到 2v2 或 3v3 多人排位賽。");
             };
 
             const clearSlot = (side, index) => {
@@ -536,14 +458,12 @@
                 }
                 setBlueTeam(newBlue);
                 setRedTeam(newRed);
-                setLobbyMessage("大廳已為雙方陣營補齊高智能虛擬電腦選手！");
             };
 
-            // ==================== 匹配倒數與進入賽事 ====================
             const startMatchmaking = () => {
                 autofillAI();
                 setIsMatching(true);
-                setMatchTimer(3); // 3秒雷達掃描與極地聯絡 countdown
+                setMatchTimer(3); 
             };
 
             useEffect(() => {
@@ -554,42 +474,32 @@
                     }, 1000);
                 } else if (isMatching && matchTimer === 0) {
                     setIsMatching(false);
-                    setGameActive(true); // 開啟 2.5D Canvas
+                    setGameActive(true); 
                 }
                 return () => clearInterval(ticker);
             }, [isMatching, matchTimer]);
 
-            // ==================== 遊戲終止與賽後結算 ====================
             const handleFinishGame = (status) => {
                 setGameActive(false);
 
-                // 計算勝利或失敗獲得
                 let earnedPoints = 0;
                 let expGained = 0;
-                let activeGained = 0;
+                let activeGained = playerStats.guildName ? (status === "WIN" ? 10 : 3) : 0;
 
                 if (status === "WIN") {
                     earnedPoints = Math.floor(Math.random() * 6) + 5; // 5 ~ 10 元
-                    expGained = Math.floor(Math.random() * 15) + 15;  // 15 ~ 30 經驗
-                    activeGained = playerStats.guildName ? 10 : 0;
+                    expGained = Math.floor(Math.random() * 15) + 15; 
                 } else {
                     earnedPoints = Math.floor(Math.random() * 3) + 1; // 1 ~ 3 元
-                    expGained = Math.floor(Math.random() * 8) + 5;   // 5 ~ 12 經驗
-                    activeGained = playerStats.guildName ? 3 : 0;
+                    expGained = Math.floor(Math.random() * 8) + 5;   
                 }
 
-                // 伴侶模式加成
-                let partnerPointsBonus = 0;
-                let partnerExpBonus = 0;
+                // 伴侶加成效果
                 if (playerStats.partner) {
-                    partnerPointsBonus = status === "WIN" ? 10 : 5;
-                    partnerExpBonus = Math.round(expGained * 0.1); // 經驗值+10%
-                    
-                    earnedPoints += partnerPointsBonus;
-                    expGained += partnerExpBonus;
+                    expGained = Math.round(expGained * 1.1); // +10% 經驗
+                    earnedPoints += (status === "WIN" ? 10 : 5); // 贏+10元，輸+5元
                 }
 
-                // 經驗值升級判斷
                 let curExp = playerStats.exp + expGained;
                 let curLevel = playerStats.level;
                 const expNeeded = curLevel * 100;
@@ -605,7 +515,6 @@
                     exp: curExp
                 }));
 
-                // 增加公會活躍大榜數據
                 if (playerStats.guildName) {
                     setGuilds(prev => prev.map(g => {
                         if (g.name === playerStats.guildName) {
@@ -619,78 +528,86 @@
                     status,
                     rewardPoints: earnedPoints,
                     expGained,
-                    guildGained: activeGained,
-                    partnerPointsBonus,
-                    partnerExpBonus
+                    guildGained: activeGained
                 });
             };
 
             return (
                 <div class="relative bg-slate-900 border-4 border-sky-400 rounded-3xl overflow-hidden shadow-2xl min-h-[680px] flex flex-col max-w-6xl mx-auto arcade-neon-blue">
                     
-                    {/* 冰原極光彩條 */}
                     <div class="h-2 bg-gradient-to-r from-sky-400 via-teal-400 to-indigo-500"></div>
 
-                    {/* 頂部資訊列 */}
+                    {/* 頂部導航資訊列 */}
                     <header class="bg-slate-950 px-4 sm:px-6 py-4 border-b border-sky-950 flex flex-wrap justify-between items-center gap-4">
                         <div class="flex items-center gap-3">
                             <div class="w-11 h-11 bg-sky-500 rounded-xl flex items-center justify-center font-bold text-slate-900 shadow-[0_0_12px_rgba(56,189,248,0.7)] text-2xl animate-pulse">
                                 ❄️
                             </div>
                             <div>
-                                <h1 class="text-xl sm:text-2xl font-black text-sky-300 tracking-wider flex items-center gap-2">
-                                    雪球冒險 2.5D <span class="text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full font-bold animate-bounce">1V1 / 2V2 / 3V3</span>
-                                </h1>
-                                <p class="text-xs text-sky-100/60 font-semibold">極速躲避與防護技能競技場</p>
+                                <h2 class="text-xl sm:text-2xl font-black text-sky-300 tracking-wider flex items-center gap-2">
+                                    雪球冒險 2.5D <span class="text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full font-bold">街機重製版</span>
+                                </h2>
+                                <p class="text-xs text-sky-100/60 font-semibold">經典復古 1P vs 2P 冰上大亂鬥</p>
                             </div>
                         </div>
 
-                        {/* 使用者狀態列 */}
-                        {user ? (
-                            <div class="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm">
-                                <div class="bg-slate-900 border border-sky-900 px-3 py-1.5 rounded-lg flex items-center gap-2">
-                                    <span class="text-sky-300 font-extrabold">
-                                        👤 {playerStats.guildName ? `[${playerStats.guildName} · ${playerStats.guildTitle}] ` : ""}{user.username}
-                                    </span>
-                                    <span class="bg-sky-500 text-slate-950 text-[10px] px-1.5 py-0.2 rounded font-black">Lv.{playerStats.level}</span>
-                                    
-                                    {/* 經驗值條 */}
-                                    <div class="w-16 bg-slate-800 h-2 rounded-full overflow-hidden relative" title={`經驗值: ${playerStats.exp}/${playerStats.level * 100}`}>
-                                        <div class="bg-sky-400 h-full transition-all" style={{ width: `${Math.min(100, (playerStats.exp / (playerStats.level * 100)) * 100)}%` }}></div>
+                        {/* GM 控制快速切換與玩家狀態 */}
+                        <div class="flex items-center gap-4">
+                            <button 
+                                onClick={() => setIsGM(!isGM)} 
+                                class={`px-3 py-1.5 rounded-lg text-xs font-black tracking-widest transition-all ${isGM ? "bg-amber-500 text-slate-950 arcade-neon-gold" : "bg-slate-800 text-slate-400 hover:text-slate-200"}`}
+                            >
+                                {isGM ? "👑 GM 後台已開啟" : "🔒 開啟 GM 權限"}
+                            </button>
+
+                            {user ? (
+                                <div class="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm">
+                                    <div class="bg-slate-900 border border-sky-900 px-3 py-1.5 rounded-lg flex items-center gap-2">
+                                        <span class="text-sky-300 font-extrabold">
+                                            👤 {playerStats.guildName ? `[${playerStats.guildName} · ${playerStats.guildTitle}] ` : ""}{user.username}
+                                        </span>
+                                        <span class="bg-sky-500 text-slate-950 text-[10px] px-1.5 py-0.2 rounded font-black">Lv.{playerStats.level}</span>
                                     </div>
+                                    <div class="bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-lg text-yellow-400 font-black">
+                                        💰 {playerStats.points} 元
+                                    </div>
+                                    <button onClick={handleLogout} class="text-slate-400 hover:text-red-400 text-xs font-bold">登出</button>
                                 </div>
-
-                                <div class="bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-lg text-yellow-400 font-black flex items-center gap-1 shadow-sm">
-                                    💰 <span>{playerStats.points}</span> <span class="text-[10px] text-amber-500/80">元點數</span>
-                                </div>
-
-                                <div class="bg-sky-500/10 border border-sky-500/30 px-3 py-1.5 rounded-lg text-sky-300 font-black flex items-center gap-1.5">
-                                    🛡️ 攜帶防禦盾: <span class="bg-sky-500 text-slate-950 px-1.5 py-0.2 rounded text-xs font-black">{playerStats.shields}</span> / 3
-                                </div>
-
-                                <button onClick={handleLogout} class="text-slate-300 hover:text-red-400 transition-colors font-bold text-xs bg-slate-800 hover:bg-slate-700 px-2.5 py-1.5 rounded-lg">
-                                    安全登出
-                                </button>
-                            </div>
-                        ) : (
-                            <div class="text-xs text-sky-400/80 font-semibold animate-pulse">❄️ 歡迎進入極地冰原！請在下方登入以記錄您的極致躲避生涯。</div>
-                        )}
+                            ) : (
+                                <span class="text-xs text-sky-400/80 animate-pulse">歡迎來到冰原競技場！</span>
+                            )}
+                        </div>
                     </header>
 
-                    {/* 主工作區 (區分大廳與遊戲實體) */}
+                    {/* GM 後台快速面板 */}
+                    {isGM && (
+                        <div class="bg-gradient-to-r from-amber-950/40 to-slate-950 border-b border-amber-500/40 p-3 flex flex-wrap items-center justify-between gap-3">
+                            <div class="flex items-center gap-2">
+                                <span class="bg-amber-500 text-slate-950 text-[10px] font-black px-2 py-1 rounded">GM 快捷作弊器</span>
+                                <span class="text-xs text-amber-300 font-semibold">可以直接修改玩家數值：</span>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <button onClick={() => setPlayerStats(prev => ({ ...prev, points: prev.points + 200 }))} class="bg-slate-900 border border-amber-500/40 text-amber-300 text-xs px-2.5 py-1 rounded hover:bg-slate-800 font-bold">+200 金額</button>
+                                <button onClick={() => setPlayerStats(prev => ({ ...prev, level: prev.level + 1 }))} class="bg-slate-900 border border-amber-500/40 text-amber-300 text-xs px-2.5 py-1 rounded hover:bg-slate-800 font-bold">+1 等級</button>
+                                <button onClick={() => setPlayerStats(prev => ({ ...prev, shields: Math.min(3, prev.shields + 1) }))} class="bg-slate-900 border border-amber-500/40 text-amber-300 text-xs px-2.5 py-1 rounded hover:bg-slate-800 font-bold">+1 防護盾</button>
+                                <button onClick={() => setPlayerStats(prev => ({ ...prev, rings: prev.rings + 1 }))} class="bg-slate-900 border border-amber-500/40 text-amber-300 text-xs px-2.5 py-1 rounded hover:bg-slate-800 font-bold">+1 伴侶戒指</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 主工作區 */}
                     <div class="flex-1 flex flex-col md:flex-row">
                         
-                        {/* 左側：大廳/對抗席位配置或戰鬥畫布 */}
+                        {/* 左側：大廳與對戰 */}
                         <main class="flex-1 p-4 sm:p-6 flex flex-col justify-center bg-slate-900/40">
                             
                             {!user ? (
-                                /* 豪華複合登入/註冊面板 */
                                 <div class="my-auto max-w-lg mx-auto w-full bg-slate-950/90 p-6 sm:p-8 rounded-2xl border-2 border-sky-950 shadow-2xl backdrop-blur-md">
                                     <div class="text-center mb-6">
                                         <span class="text-5xl animate-bounce inline-block">☃️</span>
-                                        <h2 class="text-2xl font-black text-sky-400 mt-2">極地防衛部 註冊與登入</h2>
+                                        <h2 class="text-2xl font-black text-sky-400 mt-2">極地冒險 街機入口</h2>
                                         <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">
-                                            進入 2.5D 真實冰雪賽場，操控上下左右，累積點數、更換戰術防護罩、創建公會並成為排行榜傳奇！
+                                            請使用以下方式快速體驗：
                                         </p>
                                     </div>
 
@@ -698,18 +615,11 @@
                                     {authSuccess && <div class="bg-green-500/10 border border-green-500/30 text-green-400 text-xs p-3 rounded-lg mb-4 text-center font-bold">{authSuccess}</div>}
 
                                     <div class="grid grid-cols-3 gap-2 mb-6">
-                                        <button class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-black py-2 rounded-lg text-xs transition-colors" onClick={() => { setAuthError(""); setAuthSuccess(""); }}>
-                                            📝 建立新帳號
-                                        </button>
-                                        <button class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2 rounded-lg text-xs transition-colors" onClick={() => { setAuthError(""); setAuthSuccess(""); }}>
-                                            🔑 密碼登入
-                                        </button>
-                                        <button class="bg-gradient-to-r from-amber-500 to-yellow-600 hover:brightness-110 text-slate-950 font-black py-2 rounded-lg text-xs transition-transform transform active:scale-95" onClick={handleGuestLogin}>
-                                            ⚡ 遊客快速進
-                                        </button>
+                                        <button class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-black py-2 rounded-lg text-xs transition-colors" onClick={() => { setAuthError(""); setAuthSuccess(""); }}>建立新帳號</button>
+                                        <button class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2 rounded-lg text-xs transition-colors" onClick={() => { setAuthError(""); setAuthSuccess(""); }}>密碼登入</button>
+                                        <button class="bg-gradient-to-r from-amber-500 to-yellow-600 hover:brightness-110 text-slate-950 font-black py-2 rounded-lg text-xs" onClick={handleGuestLogin}>⚡ 遊客一鍵進</button>
                                     </div>
 
-                                    {/* 快速註冊欄 */}
                                     <form onSubmit={handleRegister} class="space-y-4">
                                         <div>
                                             <label class="block text-xs font-bold text-slate-400 mb-1">戰士玩家代號 (限 10 字)</label>
@@ -725,17 +635,12 @@
                                                 <input type="email" value={regEmail} onChange={e => setRegEmail(e.target.value)} placeholder="mailbox@mail.com" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-sky-500 transition-colors" required />
                                             </div>
                                         </div>
-                                        <button type="submit" class="w-full bg-sky-500 hover:bg-sky-400 text-slate-950 font-black py-3 rounded-lg text-sm tracking-widest transition-all shadow-[0_0_15px_rgba(56,189,248,0.4)]">
+                                        <button type="submit" class="w-full bg-sky-500 hover:bg-sky-400 text-slate-950 font-black py-3 rounded-lg text-sm tracking-widest transition-all">
                                             確認建立並登陸雪地大廳
                                         </button>
                                     </form>
-
-                                    <p class="text-[10px] text-slate-500 text-center mt-4">
-                                        * 本遊戲採用 LocalStorage 安全備份機制，清除瀏覽器快取前，您的裝備及點數均會自動留存於此。
-                                    </p>
                                 </div>
                             ) : gameActive ? (
-                                /* 核心極地對戰 2.5D Canvas Component */
                                 <GameCanvas 
                                     blueTeam={blueTeam.filter(x => x !== null)} 
                                     redTeam={redTeam.filter(x => x !== null)} 
@@ -744,38 +649,29 @@
                                     onFinishGame={handleFinishGame}
                                 />
                             ) : gameResult ? (
-                                /* 極致華麗的賽後結算 */
-                                <div class="my-auto max-w-xl mx-auto w-full bg-slate-950/95 border-2 border-sky-400/40 p-6 sm:p-8 rounded-2xl text-center space-y-6 shadow-2xl relative overflow-hidden">
-                                    <div class="absolute inset-0 bg-sky-500/5 pointer-events-none"></div>
-                                    
+                                <div class="my-auto max-w-xl mx-auto w-full bg-slate-950/95 border-2 border-sky-400/40 p-6 sm:p-8 rounded-2xl text-center space-y-6 shadow-2xl relative">
                                     <div class="space-y-2">
                                         <span class="text-6xl animate-bounce inline-block">
                                             {gameResult.status === "WIN" ? "👑" : "💥"}
                                         </span>
                                         <h2 class={`text-3xl font-black tracking-wider ${gameResult.status === "WIN" ? "text-yellow-400 text-glow-yellow" : "text-sky-300 text-glow-sky"}`}>
-                                            {gameResult.status === "WIN" ? "賽事大捷 · 順利生存！" : "不幸戰損 · 再接再厲！"}
+                                            {gameResult.status === "WIN" ? "戰役大捷！" : "不幸出局，再接再厲！"}
                                         </h2>
-                                        <p class="text-xs text-slate-400">極地冰原 2.5D 球感對抗賽完美謝幕</p>
+                                        <p class="text-xs text-slate-400">極地冰原賽事完美謝幕</p>
                                     </div>
 
                                     <div class="bg-slate-900/90 p-5 rounded-xl border border-slate-800 space-y-4">
-                                        <h3 class="text-xs font-black text-sky-400 tracking-wider uppercase border-b border-slate-800/60 pb-2">獲取戰爭補給清單</h3>
+                                        <h3 class="text-xs font-black text-sky-400 tracking-wider uppercase pb-2">獲取戰爭補給清單</h3>
                                         <div class="grid grid-cols-3 gap-3">
-                                            <div class="bg-slate-950 p-3 rounded-lg border border-yellow-500/20 text-center relative overflow-hidden">
+                                            <div class="bg-slate-950 p-3 rounded-lg border border-yellow-500/20 text-center">
                                                 <span class="block text-xl">💰</span>
                                                 <span class="block text-[10px] text-slate-400 mt-1">商城點數</span>
                                                 <span class="text-lg font-black text-yellow-400">+{gameResult.rewardPoints}元</span>
-                                                {gameResult.partnerPointsBonus > 0 && (
-                                                    <span class="block text-[8px] text-pink-400 font-extrabold mt-0.5 animate-pulse">💖 伴侶 +{gameResult.partnerPointsBonus}</span>
-                                                )}
                                             </div>
-                                            <div class="bg-slate-950 p-3 rounded-lg border border-sky-500/20 text-center relative overflow-hidden">
+                                            <div class="bg-slate-950 p-3 rounded-lg border border-sky-500/20 text-center">
                                                 <span class="block text-xl">📈</span>
                                                 <span class="block text-[10px] text-slate-400 mt-1">角色經驗值</span>
                                                 <span class="text-lg font-black text-sky-400">+{gameResult.expGained}xp</span>
-                                                {gameResult.partnerExpBonus > 0 && (
-                                                    <span class="block text-[8px] text-pink-400 font-extrabold mt-0.5 animate-pulse">💖 伴侶 +{gameResult.partnerExpBonus}</span>
-                                                )}
                                             </div>
                                             <div class="bg-slate-950 p-3 rounded-lg border border-purple-500/20 text-center">
                                                 <span class="block text-xl">🏰</span>
@@ -785,214 +681,93 @@
                                         </div>
                                     </div>
 
-                                    <button 
-                                        onClick={() => setGameResult(null)}
-                                        class="px-10 py-3.5 bg-gradient-to-r from-sky-500 to-blue-500 hover:brightness-110 text-slate-950 font-black rounded-xl text-xs tracking-wider transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-sky-500/20"
-                                    >
+                                    <button onClick={() => setGameResult(null)} class="px-10 py-3.5 bg-gradient-to-r from-sky-500 to-blue-500 hover:brightness-110 text-slate-950 font-black rounded-xl text-xs tracking-wider transition-all transform hover:scale-105 shadow-lg shadow-sky-500/20">
                                         確認並返回競技大廳
                                     </button>
                                 </div>
                             ) : (
-                                /* 匹配與組隊席位面板 */
                                 <div class="flex-1 flex flex-col justify-between space-y-6">
-                                    
-                                    {/* 對抗模式多層控制 */}
+                                    {/* 選擇比賽規模 */}
                                     <div class="bg-slate-950/90 p-4 rounded-xl border border-sky-950/60">
-                                        <h3 class="text-xs font-black text-sky-400 mb-3 flex items-center gap-1.5 tracking-widest uppercase">
+                                        <h3 class="text-xs font-black text-sky-400 mb-3 tracking-widest uppercase">
                                             ❄️ 1. 選擇極地比賽規模
                                         </h3>
                                         <div class="grid grid-cols-3 gap-3 mb-4">
-                                            <button 
-                                                onClick={() => { setMatchSize(1); setLobbyMessage("模式已切換：1V1 個人榮譽宿命對決！"); }}
-                                                class={`py-2.5 px-2 rounded-lg text-xs font-black transition-all ${matchSize === 1 ? "bg-sky-500 text-slate-950 shadow-[0_0_10px_rgba(56,189,248,0.5)]" : "bg-slate-900 text-slate-400 hover:bg-slate-800"}`}
-                                            >
-                                                1V1 單挑賽
-                                            </button>
-                                            <button 
-                                                onClick={() => { setMatchSize(2); setLobbyMessage("模式已切換：2V2 雙人組隊雪地拉扯賽！"); }}
-                                                class={`py-2.5 px-2 rounded-lg text-xs font-black transition-all ${matchSize === 2 ? "bg-sky-500 text-slate-950 shadow-[0_0_10px_rgba(56,189,248,0.5)]" : "bg-slate-900 text-slate-400 hover:bg-slate-800"}`}
-                                            >
-                                                2V2 雙人賽
-                                            </button>
-                                            <button 
-                                                onClick={() => { setMatchSize(3); setLobbyMessage("模式已切換：3V3 團隊冰雪陣地衝突戰！"); }}
-                                                class={`py-2.5 px-2 rounded-lg text-xs font-black transition-all ${matchSize === 3 ? "bg-sky-500 text-slate-950 shadow-[0_0_10px_rgba(56,189,248,0.5)]" : "bg-slate-900 text-slate-400 hover:bg-slate-800"}`}
-                                            >
-                                                3V3 團體對抗
-                                            </button>
+                                            <button onClick={() => { setMatchSize(1); setLobbyMessage("模式已切換：1V1 個人榮譽對決！"); }} class={`py-2.5 px-2 rounded-lg text-xs font-black transition-all ${matchSize === 1 ? "bg-sky-500 text-slate-950 shadow-[0_0_10px_rgba(56,189,248,0.5)]" : "bg-slate-900 text-slate-400 hover:bg-slate-800"}`}>1V1 單挑賽</button>
+                                            <button onClick={() => { setMatchSize(2); setLobbyMessage("模式已切換：2V2 雙人排位賽！"); }} class={`py-2.5 px-2 rounded-lg text-xs font-black transition-all ${matchSize === 2 ? "bg-sky-500 text-slate-950 shadow-[0_0_10px_rgba(56,189,248,0.5)]" : "bg-slate-900 text-slate-400 hover:bg-slate-800"}`}>2V2 雙人賽</button>
+                                            <button onClick={() => { setMatchSize(3); setLobbyMessage("模式已切換：3V3 團隊衝突戰！"); }} class={`py-2.5 px-2 rounded-lg text-xs font-black transition-all ${matchSize === 3 ? "bg-sky-500 text-slate-950 shadow-[0_0_10px_rgba(56,189,248,0.5)]" : "bg-slate-900 text-slate-400 hover:bg-slate-800"}`}>3V3 團體對抗</button>
                                         </div>
 
                                         <div class="flex items-center justify-between border-t border-slate-800/60 pt-3 text-xs">
                                             <span class="text-slate-400 font-bold">配對陣列來源種類：</span>
                                             <div class="flex bg-slate-900 p-1 rounded-lg border border-slate-800">
-                                                <button 
-                                                    onClick={() => setMatchType("AI")}
-                                                    class={`px-3 py-1 text-xs rounded-md font-black transition-all ${matchType === "AI" ? "bg-sky-500 text-slate-950" : "text-slate-400 hover:text-slate-200"}`}
-                                                >
-                                                    🤖 AI 配對
-                                                </button>
-                                                <button 
-                                                    onClick={() => setMatchType("ONLINE")}
-                                                    class={`px-3 py-1 text-xs rounded-md font-black transition-all ${matchType === "ONLINE" ? "bg-indigo-600 text-slate-100 shadow-md" : "text-slate-400 hover:text-slate-200"}`}
-                                                >
-                                                    🌐 真人排位
-                                                </button>
+                                                <button onClick={() => setMatchType("AI")} class={`px-3 py-1 text-xs rounded-md font-black transition-all ${matchType === "AI" ? "bg-sky-500 text-slate-950" : "text-slate-400 hover:text-slate-200"}`}>🤖 AI 配對</button>
+                                                <button onClick={() => setMatchType("ONLINE")} class={`px-3 py-1 text-xs rounded-md font-black transition-all ${matchType === "ONLINE" ? "bg-indigo-600 text-slate-100 shadow-md" : "text-slate-400 hover:text-slate-200"}`}>🌐 真人排位</button>
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* 紅藍自選席位板 */}
+                                    {/* 藍紅席位面板 */}
                                     <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        
-                                        {/* 藍色方 */}
                                         <div class="bg-gradient-to-b from-blue-950/40 to-slate-950/90 border border-blue-500/30 p-4 rounded-xl flex flex-col justify-between">
                                             <div>
-                                                <div class="flex justify-between items-center mb-3">
-                                                    <h4 class="text-xs font-black text-sky-400 tracking-wider">
-                                                        🔵 藍星陣營 (玩家預設)
-                                                    </h4>
-                                                    <span class="text-[9px] bg-sky-500/10 text-sky-400 border border-sky-500/20 px-1.5 py-0.5 rounded">敏捷與防護</span>
-                                                </div>
-
+                                                <h4 class="text-xs font-black text-sky-400 tracking-wider mb-3">🔵 藍星陣營 (點擊席位直接轉隊)</h4>
                                                 <div class="space-y-2">
                                                     {Array.from({ length: matchSize }).map((_, i) => (
-                                                        <div 
-                                                            key={`blue-${i}`}
-                                                            onClick={() => blueTeam[i] !== (user ? user.username : "玩家") && handleSwitchTeam("BLUE", i)}
-                                                            class={`border p-3 rounded-lg flex items-center justify-between cursor-pointer transition-all ${blueTeam[i] ? "bg-slate-900/90 border-blue-500/40" : "bg-slate-950/40 border-dashed border-slate-800 hover:border-sky-500/50"}`}
-                                                        >
-                                                            <div class="flex items-center gap-2">
-                                                                <span class="text-[10px] bg-sky-500/20 text-sky-400 px-1.5 py-0.5 rounded font-black">藍-{i+1}</span>
-                                                                <span class="text-xs font-bold text-slate-200">
-                                                                    {blueTeam[i] || <span class="text-slate-500 italic">點擊在此席位參戰...</span>}
-                                                                </span>
-                                                            </div>
+                                                        <div key={`blue-${i}`} onClick={() => blueTeam[i] !== (user ? user.username : "玩家") && handleSwitchTeam("BLUE", i)} class={`border p-3 rounded-lg flex items-center justify-between cursor-pointer transition-all ${blueTeam[i] ? "bg-slate-900/90 border-blue-500/40" : "bg-slate-950/40 border-dashed border-slate-800 hover:border-sky-500/50"}`}>
+                                                            <span class="text-xs font-bold text-slate-200">{blueTeam[i] || <span class="text-slate-500 italic">點擊在此席位參戰...</span>}</span>
                                                             {blueTeam[i] && blueTeam[i] !== (user ? user.username : "玩家") && (
-                                                                <button 
-                                                                    onClick={(e) => { e.stopPropagation(); clearSlot("BLUE", i); }}
-                                                                    class="text-[9px] text-red-400 hover:text-red-300 bg-red-950/40 px-1.5 py-0.5 rounded"
-                                                                >
-                                                                    移出
-                                                                </button>
+                                                                <button onClick={(e) => { e.stopPropagation(); clearSlot("BLUE", i); }} class="text-[9px] text-red-400 hover:text-red-300">移出</button>
                                                             )}
                                                         </div>
                                                     ))}
                                                 </div>
                                             </div>
-
                                             <div class="mt-4 pt-3 border-t border-slate-800/40 flex justify-between gap-2">
-                                                <button onClick={autofillAI} class="text-[10px] bg-slate-900 hover:bg-slate-800 text-sky-300 border border-sky-500/20 px-2 py-1.5 rounded-lg flex-1 font-bold">
-                                                    🤖 一鍵補滿電腦
-                                                </button>
-                                                
+                                                <button onClick={autofillAI} class="text-[10px] bg-slate-900 text-sky-300 border border-sky-500/20 px-2 py-1.5 rounded-lg flex-1 font-bold">🤖 補滿電腦</button>
                                                 <div class="relative group flex-1">
-                                                    <button class="w-full text-[10px] bg-blue-500/10 hover:bg-blue-500/20 text-sky-300 border border-blue-500/30 px-2 py-1.5 rounded-lg font-bold">
-                                                        ➕ 邀請在線好友
-                                                    </button>
-                                                    <div class="absolute bottom-full left-0 right-0 hidden group-hover:block bg-slate-950 border border-sky-900 rounded-lg p-2 z-10 space-y-1 mb-1 max-h-32 overflow-y-auto shadow-2xl">
-                                                        <p class="text-[9px] text-slate-400 font-bold mb-1 border-b border-slate-800 pb-1">點擊直接邀進房：</p>
-                                                        {friends.length === 0 ? (
-                                                            <p class="text-[9px] text-slate-500 italic">查無在線好友</p>
-                                                        ) : (
-                                                            friends.map(f => (
-                                                                <button 
-                                                                    key={f.id}
-                                                                    onClick={() => inviteFriendToLobby(f.name)}
-                                                                    class="w-full text-left text-[10px] text-slate-300 hover:text-sky-400 p-1 rounded hover:bg-slate-900"
-                                                                >
-                                                                    {f.name} (Lv.{f.level})
-                                                                </button>
-                                                            ))
-                                                        )}
+                                                    <button class="w-full text-[10px] bg-blue-500/10 text-sky-300 border border-blue-500/30 px-2 py-1.5 rounded-lg font-bold">➕ 邀請好友</button>
+                                                    <div class="absolute bottom-full left-0 right-0 hidden group-hover:block bg-slate-950 border border-sky-900 rounded-lg p-2 z-10 max-h-32 overflow-y-auto">
+                                                        {friends.map(f => (
+                                                            <button key={f.id} onClick={() => inviteFriendToLobby(f.name)} class="w-full text-left text-[10px] text-slate-300 hover:text-sky-400 p-1">{f.name}</button>
+                                                        ))}
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        {/* 紅色方 */}
                                         <div class="bg-gradient-to-b from-red-950/40 to-slate-950/90 border border-red-500/30 p-4 rounded-xl flex flex-col justify-between">
                                             <div>
-                                                <div class="flex justify-between items-center mb-3">
-                                                    <h4 class="text-xs font-black text-red-400 tracking-wider">
-                                                        🔴 紅牙對抗小組
-                                                    </h4>
-                                                    <span class="text-[9px] bg-red-500/10 text-red-400 border border-red-500/20 px-1.5 py-0.5 rounded">猛攻與破盾</span>
-                                                </div>
-
+                                                <h4 class="text-xs font-black text-red-400 tracking-wider mb-3">🔴 紅牙對抗小組 (點擊席位直接轉隊)</h4>
                                                 <div class="space-y-2">
                                                     {Array.from({ length: matchSize }).map((_, i) => (
-                                                        <div 
-                                                            key={`red-${i}`}
-                                                            onClick={() => redTeam[i] !== (user ? user.username : "玩家") && handleSwitchTeam("RED", i)}
-                                                            class={`border p-3 rounded-lg flex items-center justify-between cursor-pointer transition-all ${redTeam[i] ? "bg-slate-900/90 border-red-500/40" : "bg-slate-950/40 border-dashed border-slate-800 hover:border-red-500/50"}`}
-                                                        >
-                                                            <div class="flex items-center gap-2">
-                                                                <span class="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded font-black">紅-{i+1}</span>
-                                                                <span class="text-xs font-bold text-slate-200">
-                                                                    {redTeam[i] || <span class="text-slate-500 italic">點擊在此席位參戰...</span>}
-                                                                </span>
-                                                            </div>
+                                                        <div key={`red-${i}`} onClick={() => redTeam[i] !== (user ? user.username : "玩家") && handleSwitchTeam("RED", i)} class={`border p-3 rounded-lg flex items-center justify-between cursor-pointer transition-all ${redTeam[i] ? "bg-slate-900/90 border-red-500/40" : "bg-slate-950/40 border-dashed border-slate-800 hover:border-red-500/50"}`}>
+                                                            <span class="text-xs font-bold text-slate-200">{redTeam[i] || <span class="text-slate-500 italic">點擊在此席位參戰...</span>}</span>
                                                             {redTeam[i] && redTeam[i] !== (user ? user.username : "玩家") && (
-                                                                <button 
-                                                                    onClick={(e) => { e.stopPropagation(); clearSlot("RED", i); }}
-                                                                    class="text-[9px] text-red-400 hover:text-red-300 bg-red-950/40 px-1.5 py-0.5 rounded"
-                                                                >
-                                                                    移出
-                                                                </button>
+                                                                <button onClick={(e) => { e.stopPropagation(); clearSlot("RED", i); }} class="text-[9px] text-red-400 hover:text-red-300">移出</button>
                                                             )}
                                                         </div>
                                                     ))}
                                                 </div>
                                             </div>
-
                                             <div class="mt-4 pt-3 border-t border-slate-800/40 flex justify-between gap-2">
-                                                <button 
-                                                    onClick={() => {
-                                                        const myName = user ? user.username : "玩家";
-                                                        let newRed = [...redTeam];
-                                                        const emptyIdx = newRed.findIndex(x => x === null);
-                                                        if (emptyIdx !== -1 && emptyIdx < matchSize) {
-                                                            let newBlue = [...blueTeam].map(x => x === myName ? null : x);
-                                                            newRed[emptyIdx] = myName;
-                                                            setBlueTeam(newBlue);
-                                                            setRedTeam(newRed);
-                                                            setLobbyMessage("戰略躍遷：您已跳槽至紅色紅牙陣營！");
-                                                        }
-                                                    }}
-                                                    class="text-[10px] bg-red-500/10 hover:bg-red-500/20 text-red-300 border border-red-500/20 px-2 py-1.5 rounded-lg flex-1 font-bold text-center"
-                                                >
-                                                    🎯 主動切入紅色方席位
-                                                </button>
+                                                <button onClick={() => handleSwitchTeam("RED", 0)} class="text-[10px] bg-red-500/10 text-red-300 border border-red-500/20 px-2 py-1.5 rounded-lg flex-1 font-bold">🎯 跳入紅隊</button>
                                             </div>
                                         </div>
-
                                     </div>
 
-                                    {/* 下方匹配按鈕區域 */}
                                     <div class="bg-slate-950 p-4 rounded-xl border border-sky-950/60 flex flex-col items-center justify-center gap-3">
-                                        {lobbyMessage && (
-                                            <div class="text-xs text-sky-300 bg-sky-950/40 border border-sky-900/60 px-4 py-1.5 rounded-full font-bold text-center animate-pulse">
-                                                📢 {lobbyMessage}
-                                            </div>
-                                        )}
-
                                         {isMatching ? (
                                             <div class="flex flex-col items-center gap-2">
                                                 <div class="w-10 h-10 border-4 border-sky-400 border-t-transparent rounded-full animate-spin"></div>
-                                                <p class="text-sm font-black text-sky-400 animate-pulse tracking-wider">
-                                                    極地氣候雷達掃描配對中... ({matchTimer}s)
-                                                </p>
+                                                <p class="text-sm font-black text-sky-400 animate-pulse">極地氣候雷達掃描配對中... ({matchTimer}s)</p>
                                             </div>
                                         ) : (
-                                            <button 
-                                                onClick={startMatchmaking}
-                                                class="w-full max-w-md py-4 bg-gradient-to-r from-sky-400 to-indigo-600 hover:brightness-110 text-slate-950 font-black rounded-xl text-sm tracking-widest transition-transform transform active:scale-95 shadow-[0_0_20px_rgba(56,189,248,0.4)]"
-                                            >
+                                            <button onClick={startMatchmaking} class="w-full max-w-md py-4 bg-gradient-to-r from-sky-400 to-indigo-600 hover:brightness-110 text-slate-950 font-black rounded-xl text-sm tracking-widest shadow-[0_0_20px_rgba(56,189,248,0.4)]">
                                                 ⚔️ 開始極地匹配 ({matchSize}v{matchSize})
                                             </button>
                                         )}
                                     </div>
-
                                 </div>
                             )}
 
@@ -1001,7 +776,6 @@
                         {/* 右側：側邊面板（包含商城、公會大廳、在線好友等） */}
                         <aside class="w-full md:w-80 bg-slate-950 border-t md:border-t-0 md:border-l border-sky-950/60 flex flex-col">
                             
-                            {/* Tabs 分頁頭部 */}
                             <div class="flex border-b border-sky-950">
                                 <button onClick={() => setActiveTab("lobby")} class={`flex-1 py-3 text-xs font-black text-center transition-all ${activeTab === "lobby" ? "bg-slate-900 text-sky-400 border-b-2 border-sky-400" : "text-slate-500 hover:text-slate-300"}`}>玩法</button>
                                 <button onClick={() => setActiveTab("shop")} class={`flex-1 py-3 text-xs font-black text-center transition-all ${activeTab === "shop" ? "bg-slate-900 text-sky-400 border-b-2 border-sky-400" : "text-slate-500 hover:text-slate-300"}`}>商城</button>
@@ -1009,42 +783,20 @@
                                 <button onClick={() => setActiveTab("friends")} class={`flex-1 py-3 text-xs font-black text-center transition-all ${activeTab === "friends" ? "bg-slate-900 text-sky-400 border-b-2 border-sky-400" : "text-slate-500 hover:text-slate-300"}`}>好友</button>
                             </div>
 
-                            {/* 分頁主體 */}
                             <div class="flex-1 p-4 overflow-y-auto max-h-[580px] space-y-4">
                                 {activeTab === "lobby" && (
                                     <div class="space-y-4">
                                         <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800 space-y-2 text-xs">
                                             <h4 class="font-bold text-sky-400">📖 戰場操控大綱</h4>
-                                            <ul class="space-y-1.5 list-disc list-inside text-slate-300 leading-relaxed">
-                                                <li>控制方向：使用鍵盤 <span class="bg-slate-800 text-sky-300 px-1 rounded font-mono">↑↓←→</span> 或 <span class="bg-slate-800 text-sky-300 px-1 rounded font-mono">WASD</span>。</li>
-                                                <li><b>短按空白鍵</b>：消耗無敵翻滾，全身旋轉 360 度並享有 0.5 秒避傷狀態！</li>
-                                                <li><span class="text-yellow-400 font-bold">長按空白鍵</span>：大幅度放慢左右移速，並自動<b>緩慢向後飄移退守</b>，拉開與遠處滾落雪球的距離。</li>
-                                                <li><b>小雪球</b> 扣除 5 HP，<b>大雪球</b> 扣除 10 HP，初始血量為 100 HP。</li>
-                                                <li>防護盾：使用 <span class="bg-slate-800 text-sky-300 px-1 rounded font-mono">F1 / F2 / F3</span> 迅速撐開高能護盾！</li>
-                                            </ul>
+                                            <p>本遊戲依據 **"螢幕擷取畫面 2026-06-26 151813.jpg"** 極致還原滑行噴發的黃褐色滑行雪沙尾跡與開場動畫！</p>
                                         </div>
 
                                         <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800 text-xs space-y-1.5">
-                                            <h4 class="font-bold text-sky-300">🛡️ 角色即時屬性加成</h4>
+                                            <h4 class="font-bold text-sky-300">🛡️ 角色屬性與加成</h4>
                                             <p><span class="text-slate-400">當前公會：</span> <span class="text-indigo-400 font-bold">{playerStats.guildName || "無公會"}</span></p>
-                                            <p><span class="text-slate-400">玩家會內頭銜：</span> <span class="text-purple-400 font-bold">{playerStats.guildTitle}</span></p>
+                                            <p><span class="text-slate-400">會內頭銜：</span> <span class="text-purple-400 font-bold">{playerStats.guildTitle}</span></p>
                                             <p><span class="text-slate-400">極地伴侶：</span> <span class="text-pink-400 font-bold">{playerStats.partner ? `💖 ${playerStats.partner}` : "單身貴族"}</span></p>
-                                            <p><span class="text-slate-400">真愛戒指：</span> <span class="text-amber-400 font-bold">💍 {playerStats.rings || 0} 個</span></p>
-                                            <p><span class="text-slate-400">已啟用屬性裝備：</span></p>
-                                            <div class="flex flex-wrap gap-1 mt-1">
-                                                {playerStats.purchasedItems.length === 0 ? (
-                                                    <span class="text-[10px] text-slate-500 italic">尚無啟用的永久道具</span>
-                                                ) : (
-                                                    playerStats.purchasedItems.map(id => {
-                                                        const match = shopItems.find(i => i.id === id);
-                                                        return match ? (
-                                                            <span key={id} class="text-[9px] bg-sky-500/10 text-sky-300 border border-sky-500/25 px-1.5 py-0.5 rounded-md font-bold">
-                                                                ✨ {match.name}
-                                                            </span>
-                                                        ) : null;
-                                                    })
-                                                )}
-                                            </div>
+                                            <p><span class="text-slate-400">伴侶加成：</span> <span class="text-pink-400">{playerStats.partner ? "已啟動 (經驗+10%, 點數勝+10/敗+5)" : "尚未啟動"}</span></p>
                                         </div>
                                     </div>
                                 )}
@@ -1052,31 +804,42 @@
                                 {activeTab === "shop" && (
                                     <div class="space-y-4">
                                         <div class="flex justify-between items-center">
-                                            <h3 class="text-xs font-black text-sky-300 tracking-wider">🏪 極地奇幻商城</h3>
+                                            <h3 class="text-xs font-black text-sky-300 tracking-wider">🏪 極地商城</h3>
                                             <span class="text-xs text-yellow-400 font-black">點數：{playerStats.points}</span>
                                         </div>
 
                                         {/* 商品列表 */}
                                         <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
                                             {shopItems.map(item => (
-                                                <div key={item.id} class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 hover:border-sky-900 transition-all flex flex-col justify-between gap-1.5">
+                                                <div key={item.id} class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 flex flex-col gap-1.5">
                                                     <div class="flex justify-between items-start gap-1">
                                                         <div>
                                                             <span class="text-xs font-black text-slate-200 block">{item.name}</span>
                                                             <span class="text-[10px] text-slate-400 block leading-tight">{item.desc}</span>
                                                         </div>
-                                                        <span class="text-xs font-black text-yellow-400 shrink-0">{item.price} 元</span>
+                                                        <div class="text-right">
+                                                            <span class="text-xs font-black text-yellow-400 block">{item.price} 元</span>
+                                                        </div>
                                                     </div>
+
+                                                    {/* GM 修改售價控制項 */}
+                                                    {isGM && (
+                                                        <div class="bg-amber-950/20 border border-amber-500/20 p-2 rounded flex items-center justify-between gap-1 mt-1">
+                                                            <span class="text-[9px] text-amber-300 font-bold">GM改售價:</span>
+                                                            <input 
+                                                                type="number" 
+                                                                value={item.price} 
+                                                                onChange={(e) => handleUpdatePrice(item.id, e.target.value)}
+                                                                class="w-16 bg-slate-950 border border-amber-500/40 rounded px-1 text-[10px] text-amber-300 text-center focus:outline-none"
+                                                            />
+                                                        </div>
+                                                    )}
+
                                                     <div class="flex justify-between items-center pt-1 border-t border-slate-800/40">
-                                                        {!item.system ? (
-                                                            <button onClick={() => deleteCustomItem(item.id)} class="text-[10px] text-red-400 hover:text-red-300 font-bold">
-                                                                🗑️ 下架
-                                                            </button>
+                                                        {isGM ? (
+                                                            <button onClick={() => deleteItemGM(item.id)} class="text-[10px] text-red-400 hover:text-red-300 font-bold">🗑️ GM 刪除</button>
                                                         ) : <div />}
-                                                        <button 
-                                                            onClick={() => buyItem(item)}
-                                                            class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-black text-[10px] px-2.5 py-1 rounded"
-                                                        >
+                                                        <button onClick={() => buyItem(item)} class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-black text-[10px] px-2.5 py-1 rounded">
                                                             立即購入
                                                         </button>
                                                     </div>
@@ -1084,100 +847,97 @@
                                             ))}
                                         </div>
 
-                                        {/* 新增自定義道具 */}
-                                        <div class="bg-slate-900/60 p-3 rounded-lg border border-indigo-950/80 space-y-2">
-                                            <h4 class="text-xs font-black text-indigo-400 tracking-wider">🛠️ 自定義上架新商品</h4>
-                                            <form onSubmit={addCustomItem} class="space-y-2">
-                                                <input type="text" placeholder="自訂商品名稱" value={newItemName} onChange={e => setNewItemName(e.target.value)} class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500" required />
-                                                <div class="grid grid-cols-2 gap-2">
-                                                    <input type="number" placeholder="金額 (元點數)" value={newItemPrice} onChange={e => setNewItemPrice(e.target.value)} class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500" required />
-                                                    <select value={newItemType} onChange={e => setNewItemType(e.target.value)} class="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-slate-300">
-                                                        <option value="cosmetic">裝飾披風</option>
-                                                        <option value="speed">屬性跑鞋</option>
-                                                        <option value="special">搞怪雪橇</option>
-                                                    </select>
-                                                </div>
-                                                <input type="text" placeholder="簡短說明商品之神奇功效" value={newItemDesc} onChange={e => setNewItemDesc(e.target.value)} class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500" />
-                                                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-slate-100 text-xs font-black py-2 rounded transition-colors">
-                                                    ➕ 發佈並上架商城
-                                                </button>
-                                            </form>
-                                        </div>
+                                        {/* GM 新增自定義道具 */}
+                                        {isGM && (
+                                            <div class="bg-slate-900/60 p-3 rounded-lg border border-amber-500/40 space-y-2">
+                                                <h4 class="text-xs font-black text-amber-400 tracking-wider">🛠️ GM 專用：新增自定義道具</h4>
+                                                <form onSubmit={addCustomItemGM} class="space-y-2">
+                                                    <input type="text" placeholder="商品名稱" value={newItemName} onChange={e => setNewItemName(e.target.value)} class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500" required />
+                                                    <div class="grid grid-cols-2 gap-2">
+                                                        <input type="number" placeholder="金額 (元)" value={newItemPrice} onChange={e => setNewItemPrice(e.target.value)} class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500" required />
+                                                        <select value={newItemType} onChange={e => setNewItemType(e.target.value)} class="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-slate-300">
+                                                            <option value="cosmetic">裝飾披風</option>
+                                                            <option value="speed">屬性跑鞋</option>
+                                                            <option value="special">搞怪雪橇</option>
+                                                        </select>
+                                                    </div>
+                                                    <input type="text" placeholder="說明文字" value={newItemDesc} onChange={e => setNewItemDesc(e.target.value)} class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none" />
+                                                    <button type="submit" class="w-full bg-amber-600 hover:bg-amber-500 text-slate-950 text-xs font-black py-2 rounded">
+                                                        ➕ 發佈並上架商城
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 
                                 {activeTab === "guild" && (
                                     <div class="space-y-4">
                                         <div class="flex justify-between items-center">
-                                            <h3 class="text-xs font-black text-indigo-300">🏰 極地公會事務部</h3>
+                                            <h3 class="text-xs font-black text-indigo-300">🏰 公會大廳 (可隨時加入/退出)</h3>
                                         </div>
 
-                                        {!playerStats.guildName ? (
+                                        {/* 創立公會 */}
+                                        {!playerStats.guildName && (
                                             <div class="bg-slate-900/80 p-3 rounded-lg border border-slate-800 space-y-3">
-                                                <p class="text-[11px] text-slate-400 leading-relaxed">
-                                                    您目前為極地自由散人。創立新公會需要花費 <b>100 元點數</b>。
+                                                <p class="text-[11px] text-slate-400">
+                                                    創立公會需消耗 <b>100 元點數</b>。
                                                 </p>
                                                 <form onSubmit={createGuild} class="space-y-2">
-                                                    <input 
-                                                        type="text" 
-                                                        placeholder="自訂新公會名稱" 
-                                                        value={newGuildName} 
-                                                        onChange={e => setNewGuildName(e.target.value)} 
-                                                        class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none" 
-                                                        maxLength={10} 
-                                                        required
-                                                    />
-                                                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-slate-100 font-bold py-2 rounded text-xs">
-                                                        🏰 支付 100元 建立公會
-                                                    </button>
+                                                    <input type="text" placeholder="自訂新公會名稱" value={newGuildName} onChange={e => setNewGuildName(e.target.value)} class="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none" maxLength={10} required />
+                                                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-slate-100 font-bold py-2 rounded text-xs">創立公會</button>
                                                 </form>
-                                            </div>
-                                        ) : (
-                                            <div class="bg-slate-900/80 p-3 rounded-lg border border-indigo-900 space-y-3">
-                                                <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-                                                    <span class="text-xs font-black text-indigo-300">🛡️ 所屬：{playerStats.guildName}</span>
-                                                    <button onClick={leaveGuild} class="text-[9px] text-red-400 hover:text-red-300 bg-red-950/20 px-1.5 py-0.5 rounded">退出公會</button>
-                                                </div>
-                                                <p class="text-[11px] text-slate-300">我的職稱：<span class="text-purple-400 font-bold">{playerStats.guildTitle}</span></p>
-
-                                                {/* 職稱自定義 (開放給公會長/創始會長/極地等管理職稱) */}
-                                                {(playerStats.guildTitle.includes("會長") || playerStats.guildTitle.includes("長") || playerStats.guildTitle.includes("新手")) && (
-                                                    <form onSubmit={updateLeaderTitle} class="space-y-1.5 pt-2 border-t border-slate-800/40">
-                                                        <label class="block text-[10px] text-slate-400 font-bold">👑 修改我的個人專屬職稱 (限5字)</label>
-                                                        <div class="flex gap-2">
-                                                            <input 
-                                                                type="text" 
-                                                                value={customTitle} 
-                                                                onChange={e => setCustomTitle(e.target.value.substring(0, 5))} 
-                                                                placeholder="例：極地大長老" 
-                                                                class="flex-1 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none" 
-                                                                required
-                                                            />
-                                                            <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-slate-100 text-[10px] px-2.5 rounded font-bold">修改</button>
-                                                        </div>
-                                                    </form>
-                                                )}
                                             </div>
                                         )}
 
-                                        {/* 公會排行大榜 */}
+                                        {/* 公會管理 / 職稱 */}
+                                        {playerStats.guildName && (
+                                            <div class="bg-slate-900/80 p-3 rounded-lg border border-indigo-900 space-y-3">
+                                                <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                                                    <span class="text-xs font-black text-indigo-300">🛡️ 所屬公會：{playerStats.guildName}</span>
+                                                    <button onClick={() => toggleJoinGuild(playerStats.guildName)} class="text-[9px] text-red-400 hover:text-red-300 bg-red-950/20 px-1.5 py-0.5 rounded">退出公會</button>
+                                                </div>
+                                                <p class="text-[11px] text-slate-300">我的職稱：<span class="text-purple-400 font-bold">{playerStats.guildTitle}</span></p>
+
+                                                <form onSubmit={updateLeaderTitle} class="space-y-1.5 pt-2 border-t border-slate-800/40">
+                                                    <label class="block text-[10px] text-slate-400 font-bold">👑 自訂我的職稱 (限 5 字)</label>
+                                                    <div class="flex gap-2">
+                                                        <input type="text" value={customTitle} onChange={e => setCustomTitle(e.target.value.substring(0, 5))} placeholder="例：神盾衛" class="flex-1 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none" required />
+                                                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-slate-100 text-[10px] px-2.5 rounded font-bold">修改</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        )}
+
+                                        {/* 互動式公會大榜 */}
                                         <div class="bg-slate-900/80 p-3 rounded-lg border border-slate-800 space-y-2">
-                                            <h4 class="text-xs font-black text-slate-200 tracking-wider">🏆 冰原活躍公會大榜</h4>
-                                            <div class="space-y-1.5 max-h-40 overflow-y-auto">
+                                            <h4 class="text-xs font-black text-slate-200 tracking-wider">🏆 公會活跃度列表 (點選可直接加入/退出)</h4>
+                                            <div class="space-y-1.5 max-h-52 overflow-y-auto">
                                                 {guilds
                                                     .sort((a, b) => b.activePoints - a.activePoints)
-                                                    .map((g, idx) => (
-                                                        <div key={g.name} class={`p-2 rounded flex justify-between items-center text-xs ${playerStats.guildName === g.name ? "bg-yellow-500/10 border border-yellow-500/20" : "bg-slate-950/60"}`}>
-                                                            <div class="flex items-center gap-1.5">
-                                                                <span class={`font-black ${idx === 0 ? "text-yellow-400" : idx === 1 ? "text-slate-300" : "text-amber-600"}`}>#{idx + 1}</span>
-                                                                <span class="font-bold text-slate-200">{g.name}</span>
+                                                    .map((g, idx) => {
+                                                        const isMyGuild = playerStats.guildName === g.name;
+                                                        return (
+                                                            <div key={g.name} class={`p-2 rounded flex justify-between items-center text-xs transition-all ${isMyGuild ? "bg-yellow-500/10 border border-yellow-500/40" : "bg-slate-950/60 hover:border-sky-500/30 border border-transparent"}`}>
+                                                                <div class="flex flex-col">
+                                                                    <div class="flex items-center gap-1.5">
+                                                                        <span class="font-black text-yellow-400">#{idx + 1}</span>
+                                                                        <span class="font-bold text-slate-200">{g.name}</span>
+                                                                    </div>
+                                                                    <span class="text-[9px] text-slate-500">成員: {g.members}人 | 會長: {g.leader}</span>
+                                                                </div>
+                                                                <div class="text-right flex items-center gap-2">
+                                                                    <span class="text-[10px] text-sky-400 font-black block">{g.activePoints} pt</span>
+                                                                    <button 
+                                                                        onClick={() => toggleJoinGuild(g.name)} 
+                                                                        class={`px-2 py-1 rounded text-[9px] font-black transition-all ${isMyGuild ? "bg-red-500/20 text-red-400" : "bg-sky-500 text-slate-950 hover:bg-sky-400"}`}
+                                                                    >
+                                                                        {isMyGuild ? "退出" : "加入"}
+                                                                    </button>
+                                                                </div>
                                                             </div>
-                                                            <div class="text-[10px] text-right">
-                                                                <span class="block text-sky-400 font-black">{g.activePoints} 活躍</span>
-                                                                <span class="block text-slate-500">會長: {g.leader}</span>
-                                                            </div>
-                                                        </div>
-                                                    ))}
+                                                        );
+                                                    })}
                                             </div>
                                         </div>
                                     </div>
@@ -1186,7 +946,7 @@
                                 {activeTab === "friends" && (
                                     <div class="space-y-4">
                                         <div class="flex justify-between items-center">
-                                            <h3 class="text-xs font-black text-sky-300 tracking-wider">👥 我的冰上好友列表</h3>
+                                            <h3 class="text-xs font-black text-sky-300 tracking-wider">👥 在線好友</h3>
                                         </div>
 
                                         <form onSubmit={addFriend} class="flex gap-2">
@@ -1200,22 +960,15 @@
                                                     <div>
                                                         <span class="font-bold text-slate-200">{f.name}</span>
                                                         <span class="text-[10px] text-slate-500 ml-1.5">Lv.{f.level}</span>
-                                                        <p class="text-[10px] text-indigo-400 mt-0.5">隸屬公會: {f.guild}</p>
                                                     </div>
                                                     <div class="flex items-center gap-2">
                                                         {playerStats.partner === f.name ? (
                                                             <span class="text-[9px] bg-pink-500/20 text-pink-400 border border-pink-500/30 px-2 py-0.5 rounded font-black">💖 伴侶</span>
                                                         ) : (
                                                             !playerStats.partner && (
-                                                                <button 
-                                                                    onClick={() => setConfessTarget(f)}
-                                                                    class="text-[9px] bg-pink-600 hover:bg-pink-500 text-white px-2 py-0.5 rounded font-bold tracking-wider"
-                                                                >
-                                                                    💖 告白
-                                                                </button>
+                                                                <button onClick={() => setConfessTarget(f)} class="text-[9px] bg-pink-600 hover:bg-pink-500 text-white px-2 py-0.5 rounded font-bold tracking-wider">💖 告白</button>
                                                             )
                                                         )}
-                                                        <span class="text-[9px] bg-slate-950 text-sky-400 px-1.5 py-0.5 rounded">{f.status}</span>
                                                         <button onClick={() => removeFriend(f.id)} class="text-red-400 hover:text-red-300 font-bold">🗑️</button>
                                                     </div>
                                                 </div>
@@ -1228,22 +981,6 @@
 
                     </div>
 
-                    {/* 自製對話框 Modal */}
-                    {showCustomModal && (
-                        <div class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-                            <div class="bg-slate-900 border-2 border-sky-400 rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl">
-                                <h3 class="text-lg font-black text-sky-300">{showCustomModal.title}</h3>
-                                <p class="text-xs text-slate-300 leading-relaxed">{showCustomModal.msg}</p>
-                                <button 
-                                    onClick={() => setShowCustomModal(null)}
-                                    class="px-6 py-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-black rounded-lg text-xs tracking-wider transition-all"
-                                >
-                                    確定
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
                     {/* 浪漫告白 Modal */}
                     {confessTarget && (
                         <div class="fixed inset-0 bg-black/85 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
@@ -1251,91 +988,70 @@
                                 <div class="text-center">
                                     <span class="text-5xl animate-bounce inline-block">💖</span>
                                     <h3 class="text-xl font-black text-pink-400 mt-2">向 【{confessTarget.name}】 深情告白</h3>
-                                    <p class="text-xs text-slate-400 mt-1">執子之手，踏破風雪！結為伴侶可獲得強力加成！</p>
                                 </div>
-
                                 <div class="space-y-1">
-                                    <label class="block text-xs font-bold text-pink-300">寫下你的告白情話：</label>
-                                    <textarea 
-                                        value={confessText} 
-                                        onChange={e => setConfessText(e.target.value)}
-                                        placeholder="例：你願意和我攜手踏過這片冷冽的冰原，共同防禦一輩子的滾動雪球嗎？"
-                                        class="w-full h-24 bg-slate-950 border border-pink-900/60 rounded-xl p-3 text-xs text-slate-200 focus:outline-none focus:border-pink-500"
-                                        required
-                                    />
+                                    <label class="block text-xs font-bold text-pink-300">告白文字：</label>
+                                    <textarea value={confessText} onChange={e => setConfessText(e.target.value)} placeholder="你願意與我攜手踏過這片極地，共禦一輩子的滾滾雪球嗎？" class="w-full h-24 bg-slate-950 border border-pink-900/60 rounded-xl p-3 text-xs text-slate-200 focus:outline-none focus:border-pink-500" required />
                                 </div>
-
-                                <div class="bg-slate-950 p-3 rounded-lg border border-pink-900/30 text-xs text-pink-200/90 leading-relaxed space-y-1">
-                                    <p>💍 消耗道具：<b>真愛承諾戒指 x1</b></p>
-                                    <p>💼 目前您的戒指庫存：<b>{playerStats.rings || 0} 個</b></p>
-                                    <p class="text-yellow-400 font-bold">✨ 伴侶專屬 BUFF 加成：</p>
-                                    <ul class="list-disc list-inside pl-1 text-[11px] text-slate-300">
-                                        <li>每場賽事結算經驗值額外 <span class="text-pink-400 font-bold">+10%</span></li>
-                                        <li>勝利點數補給額外獲得 <span class="text-pink-400 font-bold">+10 元</span></li>
-                                        <li>失敗安慰補給額外獲得 <span class="text-pink-400 font-bold">+5 元</span></li>
-                                    </ul>
+                                <div class="bg-slate-950 p-3 rounded-lg text-xs leading-relaxed text-slate-300">
+                                    💍 消耗道具：<b>真愛承諾戒指 x1</b> (目前庫存：<b>{playerStats.rings || 0} 個</b>)
                                 </div>
-
                                 <div class="flex gap-3">
-                                    <button 
-                                        type="button" 
-                                        onClick={() => { setConfessTarget(null); setConfessText(""); }} 
-                                        class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-lg text-xs"
-                                    >
-                                        取消
-                                    </button>
-                                    <button 
-                                        type="submit" 
-                                        class="flex-1 py-2 bg-gradient-to-r from-pink-500 to-rose-600 hover:brightness-110 text-white font-black rounded-lg text-xs shadow-md shadow-pink-500/20"
-                                    >
-                                        💘 送出戒指追求
-                                    </button>
+                                    <button type="button" onClick={() => setConfessTarget(null)} class="flex-1 py-2 bg-slate-800 text-slate-300 font-bold rounded-lg text-xs">取消</button>
+                                    <button type="submit" class="flex-1 py-2 bg-gradient-to-r from-pink-500 to-rose-600 text-white font-black rounded-lg text-xs shadow-md">💘 送出戒指追求</button>
                                 </div>
                             </form>
                         </div>
                     )}
 
-                    {/* 頁尾 */}
-                    <footer class="bg-slate-950 py-3 text-center border-t border-sky-950/40 text-[10px] text-slate-600 font-bold">
-                        雪球冒險 2.5D TEAM LEAGUE © 2026 冰原防禦模擬賽事
-                    </footer>
+                    {/* 自製對話框 */}
+                    {showCustomModal && (
+                        <div class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+                            <div class="bg-slate-900 border-2 border-sky-400 rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl">
+                                <h3 class="text-lg font-black text-sky-300">{showCustomModal.title}</h3>
+                                <p class="text-xs text-slate-300 leading-relaxed">{showCustomModal.msg}</p>
+                                <button onClick={() => setShowCustomModal(null)} class="px-6 py-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-black rounded-lg text-xs tracking-wider transition-all">確定</button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         }
 
-        // ==================== HTML5 Canvas 2.5D 遊戲渲染引擎 ====================
+        // ==================== HTML5 Canvas 2.5D 街機風格引擎 ====================
         function GameCanvas({ blueTeam, redTeam, playerStats, setPlayerStats, onFinishGame }) {
             const canvasRef = useRef(null);
 
-            // 讀取屬性加成
             const hasSpeedBoots = playerStats.purchasedItems.includes("speed_boots");
             const hasGoldCoat = playerStats.purchasedItems.includes("golden_coat");
 
-            // 使用 Ref 隔離狀態變量，確保 60FPS 渲染循環下讀取到最新的即時數據
+            // 使用 Ref 隔離狀態變量
             const engineState = useRef({
                 player: {
                     x: 0,
-                    z: 50,          // Z軸深處安全區： 20 是最前，200 是地平線
+                    z: 50,
                     hp: 100,
                     isDodging: false,
                     dodgeTimer: 0,
                     shieldActive: false,
                     shieldTimeout: 0,
                     isDead: false,
-                    speed: hasSpeedBoots ? 5.8 : 4.8,
+                    speed: hasSpeedBoots ? 6.2 : 5.0,
                     spacePressedTime: 0
                 },
                 allies: [],
                 enemies: [],
                 snowballs: [],
                 particles: [],
-                floatingTexts: [],  // 飄浮傷害/文字特效
-                backgroundSnow: [], // 漫天飄舞粒子
+                dustTrails: [],      // 黃褐色滑動尾跡效果，完美還原螢幕截圖
+                floatingTexts: [],  
+                backgroundSnow: [], 
                 gameTimer: 35,
                 lastSnowballSpawn: 0,
                 keys: {},
                 gameLoopId: null,
-                lastTime: 0
+                roundState: "intro", // "intro", "fight", "active"
+                roundIntroTimer: 120 // 用於開場 Round 1 與 Fight!! 動畫
             });
 
             useEffect(() => {
@@ -1343,27 +1059,29 @@
                 const canvas = canvasRef.current;
                 if (!canvas) return;
 
-                // 1. 初始化戰鬥人員屬性
                 state.player.hp = 100;
                 state.player.x = 0;
                 state.player.z = 50;
                 state.player.isDodging = false;
                 state.player.shieldActive = false;
                 state.player.isDead = false;
-                state.player.speed = hasSpeedBoots ? 5.8 : 4.8;
+                state.player.speed = hasSpeedBoots ? 6.2 : 5.0;
                 state.player.spacePressedTime = 0;
                 
                 state.snowballs = [];
                 state.particles = [];
+                state.dustTrails = [];
                 state.floatingTexts = [];
                 state.gameTimer = 35;
+                state.roundState = "intro";
+                state.roundIntroTimer = 120; // 2秒開場秀
 
                 // 隨機生成背景飄雪粒子
-                state.backgroundSnow = Array.from({ length: 45 }).map(() => ({
+                state.backgroundSnow = Array.from({ length: 40 }).map(() => ({
                     x: Math.random() * 800,
                     y: Math.random() * 450,
-                    vy: Math.random() * 1.5 + 0.5,
-                    vx: Math.random() * 0.6 - 0.3,
+                    vy: Math.random() * 1.2 + 0.6,
+                    vx: Math.random() * 0.4 - 0.2,
                     size: Math.random() * 2 + 1
                 }));
 
@@ -1399,10 +1117,8 @@
                     aiState: "wander"
                 }));
 
-                // 2. 鍵盤監聽事件（覆寫防堵 F1/F3 等瀏覽器行為）
                 const handleKeyDown = (e) => {
                     state.keys[e.key] = true;
-
                     if (e.key === "F1" || e.key === "F2" || e.key === "F3") {
                         e.preventDefault();
                         triggerShieldDeploy();
@@ -1414,18 +1130,17 @@
                     
                     if (e.key === " ") {
                         const pressDuration = Date.now() - state.player.spacePressedTime;
-                        // 若短暫點擊空白鍵（小於 220 毫秒）-> 觸發閃避翻滾
                         if (pressDuration < 220) {
                             if (!state.player.isDodging && !state.player.isDead) {
                                 state.player.isDodging = true;
-                                state.player.dodgeTimer = 30; // 30 幀無敵避傷時間
-                                createBurstParticles(state.player.x, state.player.z, "#e2e8f0", 8);
+                                state.player.dodgeTimer = 30; 
+                                createBurstParticles(state.player.x, state.player.z, "#fef08a", 12);
                                 state.floatingTexts.push({
                                     x: state.player.x,
                                     z: state.player.z,
                                     y: 35,
                                     text: "DODGE! 翻滾",
-                                    color: "#38bdf8",
+                                    color: "#fbbf24",
                                     alpha: 1,
                                     speedY: 0.6
                                 });
@@ -1435,7 +1150,6 @@
                     }
                 };
 
-                // 當視窗焦點流失，自動重置所有按鍵，防止黏鍵
                 const handleWindowBlur = () => {
                     state.keys = {};
                 };
@@ -1444,7 +1158,7 @@
                 window.addEventListener("keyup", handleKeyUp);
                 window.addEventListener("blur", handleWindowBlur);
 
-                // 3. 遊戲 2.5D 主更新渲染循環
+                // 2.5D 主更新與渲染循環
                 const render = () => {
                     updatePhysics();
                     drawFrame();
@@ -1452,35 +1166,31 @@
                 };
                 state.gameLoopId = requestAnimationFrame(render);
 
-                // 4. 定時倒數機制
                 const gameCountdown = setInterval(() => {
-                    state.gameTimer -= 1;
-                    if (state.gameTimer <= 0) {
-                        clearInterval(gameCountdown);
-                        // 時間終止結算存活與 HP 平均
-                        const blueHPTotal = state.player.hp + state.allies.reduce((sum, a) => sum + (a.isDead ? 0 : a.hp), 0);
-                        const redHPTotal = state.enemies.reduce((sum, e) => sum + (e.isDead ? 0 : e.hp), 0);
-                        
-                        if (blueHPTotal >= redHPTotal) {
-                            onFinishGame("WIN");
-                        } else {
-                            onFinishGame("LOSS");
+                    if (state.roundState === "active") {
+                        state.gameTimer -= 1;
+                        if (state.gameTimer <= 0) {
+                            clearInterval(gameCountdown);
+                            const blueHPTotal = state.player.hp + state.allies.reduce((sum, a) => sum + (a.isDead ? 0 : a.hp), 0);
+                            const redHPTotal = state.enemies.reduce((sum, e) => sum + (e.isDead ? 0 : e.hp), 0);
+                            if (blueHPTotal >= redHPTotal) {
+                                onFinishGame("WIN");
+                            } else {
+                                onFinishGame("LOSS");
+                            }
                         }
                     }
                 }, 1000);
 
-                // 清理監聽
                 return () => {
                     window.removeEventListener("keydown", handleKeyDown);
                     window.removeEventListener("keyup", handleKeyUp);
                     window.removeEventListener("blur", handleWindowBlur);
-                    cancelAnimationFrame(stateRefId => stateRefId);
                     cancelAnimationFrame(state.gameLoopId);
                     clearInterval(gameCountdown);
                 };
             }, [blueTeam, redTeam]);
 
-            // ==================== 粒子系統 ====================
             const createBurstParticles = (x, z, color, count) => {
                 const state = engineState.current;
                 for (let i = 0; i < count; i++) {
@@ -1497,16 +1207,15 @@
                 }
             };
 
-            // ==================== 盾牌部署 ====================
             const triggerShieldDeploy = () => {
                 const state = engineState.current;
                 if (state.player.isDead) return;
 
                 if (playerStats.shields > 0) {
-                    if (state.player.shieldActive) return; // 不重複疊加浪費
+                    if (state.player.shieldActive) return;
 
                     state.player.shieldActive = true;
-                    state.player.shieldTimeout = 300; // 防護盾持續 300 幀 (約 5 秒)
+                    state.player.shieldTimeout = 300; 
 
                     setPlayerStats(prev => ({
                         ...prev,
@@ -1518,7 +1227,7 @@
                         x: state.player.x,
                         z: state.player.z,
                         y: 40,
-                        text: "SHIELD ON! 護盾",
+                        text: "SHIELD ON!",
                         color: "#22d3ee",
                         alpha: 1,
                         speedY: 0.5
@@ -1526,28 +1235,33 @@
                 }
             };
 
-            // ==================== 2.5D ground 深度與坐標透視公式 ====================
-            // 冰面跑道寬度 x: -160 到 160
-            // y: 垂直高度， 0 是冰面
-            // z: 距離深度， 200 代表最遠地平線， 20 代表最前景
             const project = (x, y, z, width, height) => {
-                const horizonY = 140; // 視平線的高度位置
-                // 深度縮放比率： z=200 時 scale=0.15； z=20 時 scale=1.0
+                const horizonY = 140; 
                 const scale = 0.15 + (0.85 * (200 - z)) / 180;
-
                 const screenX = width / 2 + x * scale;
-                // 利用透視比例決定在視平線之下的跑道高度
                 const screenY = horizonY + (height - horizonY) * ((200 - z) / 180) - y * scale;
-
                 return { x: screenX, y: screenY, scale: scale };
             };
 
-            // ==================== 核心物理演算機制 ====================
             const updatePhysics = () => {
                 const state = engineState.current;
+
+                // 開場動畫定時
+                if (state.roundState === "intro") {
+                    state.roundIntroTimer -= 1;
+                    if (state.roundIntroTimer === 60) {
+                        state.roundState = "fight";
+                    }
+                } else if (state.roundState === "fight") {
+                    state.roundIntroTimer -= 1;
+                    if (state.roundIntroTimer <= 0) {
+                        state.roundState = "active";
+                    }
+                }
+
                 if (state.player.isDead) return;
 
-                // --- 1. 背景飄雪物理運動 ---
+                // 飄落細雪
                 state.backgroundSnow.forEach(snowflake => {
                     snowflake.y += snowflake.vy;
                     snowflake.x += snowflake.vx;
@@ -1557,26 +1271,36 @@
                     }
                 });
 
-                // --- 2. 玩家操控物理 ---
+                // 控制輸入
                 let inputX = 0;
                 let inputZ = 0;
 
                 if (state.keys["ArrowLeft"] || state.keys["a"] || state.keys["A"]) inputX = -1;
                 if (state.keys["ArrowRight"] || state.keys["d"] || state.keys["D"]) inputX = 1;
-                if (state.keys["ArrowUp"] || state.keys["w"] || state.keys["W"]) inputZ = -1; // 往前衝 (靠近遠處地平線)
-                if (state.keys["ArrowDown"] || state.keys["s"] || state.keys["S"]) inputZ = 1;  // 往後退 (靠近自己螢幕)
+                if (state.keys["ArrowUp"] || state.keys["w"] || state.keys["W"]) inputZ = -1;
+                if (state.keys["ArrowDown"] || state.keys["s"] || state.keys["S"]) inputZ = 1;
 
-                // 空白鍵判定
+                let isMoving = inputX !== 0 || inputZ !== 0;
+
+                // 產生滑溜軌跡黃褐色雪粒 (完美還原螢幕截圖 151813.jpg 的滑動感)
+                if (isMoving && Math.random() < 0.4 && state.roundState === "active") {
+                    state.dustTrails.push({
+                        x: state.player.x + (Math.random() * 10 - 5),
+                        z: state.player.z,
+                        size: Math.random() * 5 + 3,
+                        alpha: 0.8
+                    });
+                }
+
                 if (state.keys[" "]) {
                     if (state.player.spacePressedTime === 0) {
                         state.player.spacePressedTime = Date.now();
                     }
                     const pressDuration = Date.now() - state.player.spacePressedTime;
-                    // 超過 220 毫秒進入「長按」倒退滑行
                     if (pressDuration >= 220) {
-                        inputZ = 1; // 強制往後倒退漂移
-                        state.player.x += inputX * (state.player.speed * 0.4); // 減速左右
-                        state.player.z += inputZ * (state.player.speed * 0.6); // 緩慢後退
+                        inputZ = 1; 
+                        state.player.x += inputX * (state.player.speed * 0.4); 
+                        state.player.z += inputZ * (state.player.speed * 0.6); 
                     } else {
                         state.player.x += inputX * state.player.speed;
                         state.player.z += inputZ * state.player.speed;
@@ -1586,11 +1310,9 @@
                     state.player.z += inputZ * state.player.speed;
                 }
 
-                // 邊界安全限制
                 state.player.x = Math.max(-175, Math.min(175, state.player.x));
                 state.player.z = Math.max(25, Math.min(185, state.player.z));
 
-                // 閃避及護盾狀態更新
                 if (state.player.isDodging) {
                     state.player.dodgeTimer -= 1;
                     if (state.player.dodgeTimer <= 0) {
@@ -1604,40 +1326,27 @@
                     }
                 }
 
-                // --- 3. 盟友及對手高階防禦避險 AI ---
+                // AI 行為
                 const runAI = (char) => {
                     char.aiTimer -= 1;
-
-                    // 雷達偵測：尋找正朝著自己滾落的近距離雪球
                     const threat = state.snowballs.find(ball => {
                         const depthGap = ball.z - char.z;
-                        // 當雪球在自己前方，且距離較近時觸發高危防守
                         return depthGap > 0 && depthGap < 65 && Math.abs(ball.x - char.x) < 35;
                     });
 
                     if (threat) {
-                        // 威脅應對：反向迅速逃逸
                         char.aiState = "escape";
                         if (threat.x < char.x) {
-                            char.x += 3.2; // 往右閃躲
+                            char.x += 3.2;
                         } else {
-                            char.x -= 3.2; // 往左閃躲
-                        }
-                        
-                        // 機率性觸發滾地翻滾
-                        if (Math.random() < 0.02 && !char.isDodging) {
-                            char.isDodging = true;
-                            char.dodgeTimer = 25;
-                            createBurstParticles(char.x, char.z, "#cbd5e1", 5);
+                            char.x -= 3.2;
                         }
                     } else {
-                        // 平穩漫遊
                         if (char.aiTimer <= 0) {
                             char.aiState = Math.random() > 0.35 ? "wander" : "idle";
                             char.aiTimer = Math.random() * 50 + 20;
                             char.targetX = char.x + (Math.random() * 50 - 25);
                         }
-
                         if (char.aiState === "wander" && char.targetX !== undefined) {
                             const diffX = char.targetX - char.x;
                             if (Math.abs(diffX) > 4) {
@@ -1646,7 +1355,6 @@
                         }
                     }
 
-                    // 確保 AI 在跑道內
                     char.x = Math.max(-170, Math.min(170, char.x));
 
                     if (char.isDodging) {
@@ -1660,584 +1368,18 @@
                 state.allies.forEach(a => { if (!a.isDead) runAI(a); });
                 state.enemies.forEach(e => { if (!e.isDead) runAI(e); });
 
-                // --- 4. 雪球生成規律控制 (隨著倒數前進逐漸瘋狂) ---
-                const now = Date.now();
-                const progressFactor = (35 - state.gameTimer) / 35; // 0 -> 1
-                const spawnInterval = Math.max(450, 1300 - progressFactor * 850); 
-
-                if (now - state.lastSnowballSpawn > spawnInterval) {
-                    state.lastSnowballSpawn = now;
-                    const isHuge = Math.random() < (0.2 + progressFactor * 0.15); // 後期大雪球比例上升
-                    state.snowballs.push({
-                        id: `ball_${now}`,
-                        x: Math.random() * 300 - 150, // 遠處地平線生成橫坐標
-                        z: 200,                        // 生成於地平線深處
-                        size: isHuge ? "large" : "small",
-                        damage: isHuge ? 10 : 5,
-                        speed: (Math.random() * 2 + 3.8) + progressFactor * 1.5, // 速度遞增
-                        spinAngle: 0
-                    });
-                }
-
-                // --- 5. 雪球滾動位移與高精度 2.5D 碰撞檢測 ---
-                state.snowballs = state.snowballs.filter(ball => {
-                    ball.z -= ball.speed; // Z 減少即是向鏡頭（玩家）滾近
-                    ball.spinAngle += 0.08;
-
-                    // 超過最前端，自然滾出畫面
-                    if (ball.z < 18) {
-                        return false;
-                    }
-
-                    // 計算碰撞：因 2.5D 為近大遠小，碰撞判定 X 距離也需乘以該深度對應的 scale
-                    const checkHit = (character) => {
-                        const scaleFactor = (0.15 + (0.85 * (200 - character.z)) / 180);
-                        const zGap = Math.abs(ball.z - character.z);
-                        // 2D 橫向投射寬度判定半徑
-                        const xGap = Math.abs(ball.x - character.x);
-
-                        return zGap < 7 && xGap < (22 * scaleFactor);
-                    };
-
-                    // 玩家撞擊
-                    if (!state.player.isDead && checkHit(state.player)) {
-                        applyDamageToChar(ball, state.player, true);
-                        return false; // 碎成雪泥消失
-                    }
-
-                    // 盟友撞擊
-                    for (let a of state.allies) {
-                        if (!a.isDead && checkHit(a)) {
-                            applyDamageToChar(ball, a, false);
-                            return false;
-                        }
-                    }
-
-                    // 敵人撞擊
-                    for (let e of state.enemies) {
-                        if (!e.isDead && checkHit(e)) {
-                            applyDamageToChar(ball, e, false);
-                            return false;
-                        }
-                    }
-
-                    return true;
-                });
-
-                // --- 6. 爆裂粒子與浮動戰鬥文字位移 ---
-                state.particles = state.particles.filter(p => {
-                    p.x += p.vx;
-                    p.z += p.vz;
-                    p.y += p.vy;
-                    p.vy -= 0.12; // 重力加速度下墜
-                    p.alpha -= 0.025;
-                    return p.alpha > 0;
-                });
-
-                state.floatingTexts.forEach(t => {
-                    t.y += t.speedY || 0.5;
-                    t.alpha -= 0.02;
-                });
-                state.floatingTexts = state.floatingTexts.filter(t => t.alpha > 0);
-
-                // --- 7. 即時勝負裁決 ---
-                const blueAlive = !state.player.isDead || state.allies.some(a => !a.isDead);
-                const redAlive = state.enemies.some(e => !e.isDead);
-
-                if (!blueAlive) {
-                    onFinishGame("LOSS");
-                } else if (!redAlive) {
-                    onFinishGame("WIN");
-                }
-            };
-
-            const applyDamageToChar = (ball, char, isPlayerControlled) => {
-                const state = engineState.current;
-
-                if (char.isDodging) {
-                    state.floatingTexts.push({
-                        x: char.x,
-                        z: char.z,
-                        y: 35,
-                        text: "MISS 迴避!",
-                        color: "#94a3b8",
-                        alpha: 1
-                    });
-                    createBurstParticles(char.x, char.z, "#cbd5e1", 4);
-                    return;
-                }
-
-                if (isPlayerControlled && state.player.shieldActive) {
-                    // 防護罩完美阻擋
-                    state.player.shieldActive = false; // 盾碎
-                    createBurstParticles(char.x, char.z, "#38bdf8", 15);
-                    state.floatingTexts.push({
-                        x: char.x,
-                        z: char.z,
-                        y: 38,
-                        text: "SHIELD BREAK! 破盾",
-                        color: "#ef4444",
-                        alpha: 1
-                    });
-                    return;
-                }
-
-                // 實扣傷害
-                char.hp = Math.max(0, char.hp - ball.damage);
-                createBurstParticles(char.x, char.z, isPlayerControlled ? "#ef4444" : "#f43f5e", 10);
-                
-                state.floatingTexts.push({
-                    x: char.x,
-                    z: char.z,
-                    y: 35,
-                    text: `-${ball.damage} HP`,
-                    color: isPlayerControlled ? "#ef4444" : "#f43f5e",
-                    alpha: 1
-                });
-
-                if (char.hp <= 0) {
-                    char.isDead = true;
-                    createBurstParticles(char.x, char.z, "#ffffff", 20);
-                    state.floatingTexts.push({
-                        x: char.x,
-                        z: char.z,
-                        y: 45,
-                        text: "💥 K.O. 戰損!",
-                        color: "#94a3b8",
-                        alpha: 1
-                    });
-                }
-            };
-
-            // ==================== 繪製總入口 ====================
-            const drawFrame = () => {
-                const canvas = canvasRef.current;
-                if (!canvas) return;
-                const ctx = canvas.getContext("2d");
-                const state = engineState.current;
-
-                const w = canvas.width;
-                const h = canvas.height;
-
-                // 1. 極地冬夜天空
-                const sky = ctx.createLinearGradient(0, 0, 0, 140);
-                sky.addColorStop(0, "#030712");
-                sky.addColorStop(0.5, "#0b1329");
-                sky.addColorStop(1, "#1e1b4b");
-                ctx.fillStyle = sky;
-                ctx.fillRect(0, 0, w, h);
-
-                // 畫遠景雪山與絢麗綠極光
-                ctx.fillStyle = "rgba(45, 212, 191, 0.12)";
-                ctx.beginPath();
-                ctx.moveTo(0, 140);
-                ctx.lineTo(w * 0.3, 50);
-                ctx.lineTo(w * 0.6, 140);
-                ctx.lineTo(w * 0.85, 40);
-                ctx.lineTo(w, 140);
-                ctx.fill();
-
-                // 2. 冰面賽道大地底色
-                ctx.fillStyle = "#0f172a";
-                ctx.fillRect(0, 140, w, h - 140);
-
-                const ice = ctx.createLinearGradient(0, 140, 0, h);
-                ice.addColorStop(0, "#1e293b");
-                ice.addColorStop(1, "#030712");
-                ctx.fillStyle = ice;
-                ctx.fillRect(0, 140, w, h - 140);
-
-                // 3. 畫賽道分界格線
-                ctx.strokeStyle = "rgba(56, 189, 248, 0.15)";
-                ctx.lineWidth = 1.5;
-                const lanes = 6;
-                for (let i = 0; i <= lanes; i++) {
-                    const xFar = -170 + (340 / lanes) * i;
-                    const pFar = project(xFar, 0, 200, w, h);
-                    const pNear = project(xFar, 0, 20, w, h);
-                    ctx.beginPath();
-                    ctx.moveTo(pFar.x, pFar.y);
-                    ctx.lineTo(pNear.x, pNear.y);
-                    ctx.stroke();
-                }
-
-                // 橫向透視距離線
-                for (let zLine = 30; zLine <= 200; zLine += 25) {
-                    const pL = project(-170, 0, zLine, w, h);
-                    const pR = project(170, 0, zLine, w, h);
-                    ctx.strokeStyle = `rgba(56, 189, 248, ${0.18 * (1 - zLine / 200)})`;
-                    ctx.beginPath();
-                    ctx.moveTo(pL.x, pL.y);
-                    ctx.lineTo(pR.x, pR.y);
-                    ctx.stroke();
-                }
-
-                // 4. 畫冰晶防禦樹（賽道左右兩側，增強 2.5D 前進感）
-                for (let zTree = 30; zTree <= 200; zTree += 30) {
-                    // 左側樹
-                    drawPineTree(ctx, -190, zTree, w, h);
-                    // 右側樹
-                    drawPineTree(ctx, 190, zTree, w, h);
-                }
-
-                // 5. 排序渲染實體（由遠至近，避免遮擋錯誤）
-                const queue = [];
-
-                if (!state.player.isDead) {
-                    queue.push({ type: "player", z: state.player.z, obj: state.player, name: user ? user.username : "玩家" });
-                }
-                state.allies.forEach(a => {
-                    if (!a.isDead) queue.push({ type: "ally", z: a.z, obj: a, name: a.name });
-                });
-                state.enemies.forEach(e => {
-                    if (!e.isDead) queue.push({ type: "enemy", z: e.z, obj: e, name: e.name });
-                });
-                state.snowballs.forEach(b => {
-                    queue.push({ type: "snowball", z: b.z, obj: b });
-                });
-
-                // 按 Z 從遠到近排序 (Z值越大越遠，優先畫)
-                queue.sort((a, b) => b.z - a.z);
-
-                queue.forEach(node => {
-                    if (node.type === "player") {
-                        drawPlayer(ctx, node.obj, node.name, "#38bdf8", w, h, hasGoldCoat);
-                    } else if (node.type === "ally") {
-                        drawPlayer(ctx, node.obj, node.name, "#60a5fa", w, h, false);
-                    } else if (node.type === "enemy") {
-                        drawPlayer(ctx, node.obj, node.name, "#ef4444", w, h, false);
-                    } else if (node.type === "snowball") {
-                        drawSnowballEntity(ctx, node.obj, w, h);
-                    }
-                });
-
-                // 6. 渲染爆裂碎片粒子
-                state.particles.forEach(p => {
-                    const pos = project(p.x, p.y, p.z, w, h);
-                    ctx.save();
-                    ctx.globalAlpha = p.alpha;
-                    ctx.fillStyle = p.color;
-                    ctx.beginPath();
-                    ctx.arc(pos.x, pos.y, Math.max(1, 3.5 * pos.scale), 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.restore();
-                });
-
-                // 7. 渲染浮動傷害/狀態文字
-                state.floatingTexts.forEach(t => {
-                    const pos = project(t.x, t.y, t.z, w, h);
-                    ctx.save();
-                    ctx.globalAlpha = t.alpha;
-                    ctx.fillStyle = t.color;
-                    ctx.font = `black ${Math.max(9, 12 * pos.scale)}px "Press Start 2P", Courier`;
-                    ctx.textAlign = "center";
-                    ctx.shadowColor = "#000";
-                    ctx.shadowBlur = 4;
-                    ctx.fillText(t.text, pos.x, pos.y);
-                    ctx.restore();
-                });
-
-                // 8. 渲染背景與前景漫天飄雪
-                ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
-                state.backgroundSnow.forEach(s => {
-                    ctx.beginPath();
-                    ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
-                    ctx.fill();
-                });
-
-                // 9. 戰場定時大字
-                ctx.fillStyle = "rgba(11, 19, 41, 0.85)";
-                ctx.fillRect(w / 2 - 50, 10, 100, 30);
-                ctx.strokeStyle = "rgba(56, 189, 248, 0.4)";
-                ctx.strokeRect(w / 2 - 50, 10, 100, 30);
-
-                ctx.font = 'bold 15px monospace';
-                ctx.fillStyle = state.gameTimer <= 5 ? "#ef4444" : "#22d3ee";
-                ctx.textAlign = "center";
-                ctx.fillText(`⏱️ ${state.gameTimer}s`, w / 2, 30);
-            };
-
-            // 畫 pine tree
-            const drawPineTree = (ctx, x3d, z3d, w, h) => {
-                const pos = project(x3d, 0, z3d, w, h);
-                const scale = pos.scale;
-                const treeH = 50 * scale;
-                const treeW = 16 * scale;
-
-                // 樹幹
-                ctx.fillStyle = "#475569";
-                ctx.fillRect(pos.x - treeW * 0.2, pos.y - treeH * 0.25, treeW * 0.4, treeH * 0.25);
-
-                // 樹葉
-                ctx.fillStyle = `rgba(15, 118, 110, ${0.4 + (200 - z3d)/300})`;
-                ctx.beginPath();
-                ctx.moveTo(pos.x, pos.y - treeH);
-                ctx.lineTo(pos.x - treeW, pos.y - treeH * 0.2);
-                ctx.lineTo(pos.x + treeW, pos.y - treeH * 0.2);
-                ctx.closePath();
-                ctx.fill();
-
-                // 頂部積雪
-                ctx.fillStyle = "#ffffff";
-                ctx.beginPath();
-                ctx.moveTo(pos.x, pos.y - treeH);
-                ctx.lineTo(pos.x - treeW * 0.4, pos.y - treeH * 0.68);
-                ctx.lineTo(pos.x + treeW * 0.4, pos.y - treeH * 0.68);
-                ctx.closePath();
-                ctx.fill();
-            };
-
-            // 畫精緻角色
-            const drawPlayer = (ctx, char, name, themeColor, width, height, isGold) => {
-                const pos = project(char.x, 0, char.z, width, height);
-                const scale = pos.scale;
-                const pHeight = 35 * scale;
-                const pWidth = 18 * scale;
-
-                ctx.save();
-
-                // 旋轉翻滾
-                if (char.isDodging) {
-                    ctx.translate(pos.x, pos.y - pHeight / 2);
-                    ctx.rotate((char.dodgeTimer / 30) * Math.PI * 4);
-                    ctx.translate(-pos.x, -(pos.y - pHeight / 2));
-                }
-
-                // 冰面陰影
-                ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
-                ctx.beginPath();
-                ctx.ellipse(pos.x, pos.y, pWidth * 1.1, pWidth * 0.4, 0, 0, Math.PI * 2);
-                ctx.fill();
-
-                // 大衣主體
-                ctx.fillStyle = isGold ? "#fbbf24" : themeColor;
-                ctx.strokeStyle = "#0f172a";
-                ctx.lineWidth = 1 * scale + 0.5;
-
-                ctx.beginPath();
-                ctx.moveTo(pos.x - pWidth, pos.y);
-                ctx.lineTo(pos.x - pWidth * 0.6, pos.y - pHeight);
-                ctx.lineTo(pos.x + pWidth * 0.6, pos.y - pHeight);
-                ctx.lineTo(pos.x + pWidth, pos.y);
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
-
-                // 可愛毛帽
-                ctx.fillStyle = isGold ? "#f59e0b" : "#1e293b";
-                ctx.beginPath();
-                ctx.arc(pos.x, pos.y - pHeight, pWidth * 0.75, Math.PI, 0, false);
-                ctx.fill();
-                ctx.stroke();
-
-                // 滑雪護目鏡
-                ctx.fillStyle = "#34d399";
-                ctx.fillRect(pos.x - pWidth * 0.45, pos.y - pHeight + 2 * scale, pWidth * 0.9, 4 * scale);
-
-                // 啟用中護盾外層
-                if (char.shieldActive) {
-                    ctx.restore();
-                    ctx.save();
-                    ctx.strokeStyle = "rgba(34, 211, 238, 0.85)";
-                    ctx.shadowColor = "#22d3ee";
-                    ctx.shadowBlur = 8;
-                    ctx.lineWidth = 2 * scale + 1;
-                    ctx.fillStyle = "rgba(34, 211, 238, 0.12)";
-                    ctx.beginPath();
-                    ctx.arc(pos.x, pos.y - pHeight / 2, pHeight * 1.05, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.stroke();
-                }
-
-                ctx.restore();
-
-                // 名字及 HP 顯示
-                const uiY = pos.y - pHeight - 10 * scale;
-                ctx.fillStyle = "#ffffff";
-                ctx.font = `bold ${Math.max(9, 10 * scale)}px sans-serif`;
-                ctx.textAlign = "center";
-                ctx.fillText(name, pos.x, uiY);
-
-                // HP
-                const hpW = 32 * scale;
-                const hpH = 3.5 * scale;
-                ctx.fillStyle = "rgba(15, 23, 42, 0.75)";
-                ctx.fillRect(pos.x - hpW / 2, uiY + 4 * scale, hpW, hpH);
-                ctx.fillStyle = char.hp > 40 ? "#10b981" : "#ef4444";
-                ctx.fillRect(pos.x - hpW / 2, uiY + 4 * scale, hpW * (char.hp / 100), hpH);
-            };
-
-            // 畫雪球
-            const drawSnowballEntity = (ctx, ball, width, height) => {
-                const pos = project(ball.x, 0, ball.z, width, height);
-                const scale = pos.scale;
-                const baseRad = ball.size === "large" ? 18 : 10;
-                const rad = baseRad * scale;
-
-                ctx.save();
-
-                // 投影
-                ctx.fillStyle = "rgba(0,0,0,0.25)";
-                ctx.beginPath();
-                ctx.ellipse(pos.x, pos.y + rad * 0.85, rad * 1.15, rad * 0.35, 0, 0, Math.PI * 2);
-                ctx.fill();
-
-                // 紋理旋轉
-                ctx.translate(pos.x, pos.y);
-                ctx.rotate(ball.spinAngle);
-
-                // 炫彩雪球球體
-                const radial = ctx.createRadialGradient(-rad * 0.25, -rad * 0.25, rad * 0.05, 0, 0, rad);
-                radial.addColorStop(0, "#ffffff");
-                radial.addColorStop(0.75, "#e2e8f0");
-                radial.addColorStop(1, "#94a3b8");
-                ctx.fillStyle = radial;
-
-                ctx.beginPath();
-                ctx.arc(0, 0, rad, 0, Math.PI * 2);
-                ctx.fill();
-
-                // 刻畫旋轉暗紋
-                ctx.strokeStyle = "rgba(100, 116, 139, 0.35)";
-                ctx.lineWidth = 1 * scale + 0.5;
-                ctx.beginPath();
-                ctx.arc(-rad * 0.2, 0, rad * 0.65, 0.3, Math.PI - 0.3);
-                ctx.stroke();
-
-                ctx.restore();
-            };
-
-            return (
-                <div class="space-y-4 flex flex-col items-center">
-                    
-                    {/* 2.5D Canvas 顯示容器 */}
-                    <div class="relative bg-slate-950 rounded-2xl overflow-hidden border-4 border-sky-400/80 shadow-2xl">
-                        <canvas ref={canvasRef} width={800} height={450} class="block max-w-full w-full h-auto" />
-                        
-                        {/* 左上角提示 */}
-                        <div class="absolute top-3 left-3 bg-slate-950/80 px-3 py-1.5 rounded-lg border border-sky-500/30 text-[10px] font-black text-sky-400 space-y-1 backdrop-blur-sm">
-                            <span class="block text-green-400">🛡️ 現有戰略護盾：{playerStats.shields} 個</span>
-                            <span class="block">快捷部署按鍵：鍵盤 F1 ~ F3</span>
-                        </div>
-                    </div>
-
-                    {/* 控制區 */}
-                    <div class="w-full bg-slate-950/90 p-4 rounded-xl border border-sky-950/60 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-                        
-                        {/* 1. 防禦部署熱鍵 */}
-                        <div class="flex flex-col items-center gap-1.5">
-                            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">快捷護盾施放區</span>
-                            <div class="flex gap-2">
-                                <button 
-                                    onClick={triggerShieldDeploy} 
-                                    disabled={playerStats.shields < 1} 
-                                    class={`px-3 py-2 rounded-lg text-xs font-black border transition-all ${playerStats.shields >= 1 ? "bg-sky-500/10 border-sky-400 text-sky-300 hover:bg-sky-500/20" : "bg-slate-900 border-slate-800 text-slate-600 cursor-not-allowed"}`}
-                                >
-                                    🛡️ 施放-F1
-                                </button>
-                                <button 
-                                    onClick={triggerShieldDeploy} 
-                                    disabled={playerStats.shields < 2} 
-                                    class={`px-3 py-2 rounded-lg text-xs font-black border transition-all ${playerStats.shields >= 2 ? "bg-sky-500/10 border-sky-400 text-sky-300 hover:bg-sky-500/20" : "bg-slate-900 border-slate-800 text-slate-600 cursor-not-allowed"}`}
-                                >
-                                    🛡️ 施放-F2
-                                </button>
-                                <button 
-                                    onClick={triggerShieldDeploy} 
-                                    disabled={playerStats.shields < 3} 
-                                    class={`px-3 py-2 rounded-lg text-xs font-black border transition-all ${playerStats.shields >= 3 ? "bg-sky-500/10 border-sky-400 text-sky-300 hover:bg-sky-500/20" : "bg-slate-900 border-slate-800 text-slate-600 cursor-not-allowed"}`}
-                                >
-                                    🛡️ 施放-F3
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* 2. 空白鍵動作槽 */}
-                        <div class="flex flex-col items-center gap-1">
-                            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">動作指令模擬</span>
-                            <div class="flex gap-2">
-                                <button 
-                                    onMouseDown={() => {
-                                        const state = engineState.current;
-                                        if (!state.player.isDodging && !state.player.isDead) {
-                                            state.player.isDodging = true;
-                                            state.player.dodgeTimer = 30;
-                                            createBurstParticles(state.player.x, state.player.z, "#e2e8f0", 8);
-                                        }
-                                    }}
-                                    class="px-4 py-2 bg-gradient-to-r from-sky-400 to-blue-500 text-slate-950 font-black rounded-lg text-xs shadow-md"
-                                >
-                                    🔘 空白鍵: 翻滾
-                                </button>
-                                <button 
-                                    onMouseDown={() => {
-                                        engineState.current.keys[" "] = true;
-                                        engineState.current.player.spacePressedTime = Date.now() - 300;
-                                    }}
-                                    onMouseUp={() => {
-                                        engineState.current.keys[" "] = false;
-                                        engineState.current.player.spacePressedTime = 0;
-                                    }}
-                                    onMouseLeave={() => {
-                                        engineState.current.keys[" "] = false;
-                                        engineState.current.player.spacePressedTime = 0;
-                                    }}
-                                    class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-slate-100 font-black rounded-lg text-xs"
-                                >
-                                    按住: 減速後退
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* 3. 虛擬十字方向盤 */}
-                        <div class="flex flex-col items-center gap-1">
-                            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">虛擬方向盤</span>
-                            <div class="grid grid-cols-3 gap-1 w-28 text-center">
-                                <div></div>
-                                <button 
-                                    onMouseDown={() => { engineState.current.keys["ArrowUp"] = true; }} 
-                                    onMouseUp={() => { engineState.current.keys["ArrowUp"] = false; }} 
-                                    onMouseLeave={() => { engineState.current.keys["ArrowUp"] = false; }} 
-                                    class="bg-slate-900 border border-slate-800 p-1.5 rounded text-xs text-sky-400 font-bold active:bg-sky-400 active:text-slate-950"
-                                >
-                                    ▲
-                                </button>
-                                <div></div>
-                                <button 
-                                    onMouseDown={() => { engineState.current.keys["ArrowLeft"] = true; }} 
-                                    onMouseUp={() => { engineState.current.keys["ArrowLeft"] = false; }} 
-                                    onMouseLeave={() => { engineState.current.keys["ArrowLeft"] = false; }} 
-                                    class="bg-slate-900 border border-slate-800 p-1.5 rounded text-xs text-sky-400 font-bold active:bg-sky-400 active:text-slate-950"
-                                >
-                                    ◀
-                                </button>
-                                <button 
-                                    onMouseDown={() => { engineState.current.keys["ArrowDown"] = true; }} 
-                                    onMouseUp={() => { engineState.current.keys["ArrowDown"] = false; }} 
-                                    onMouseLeave={() => { engineState.current.keys["ArrowDown"] = false; }} 
-                                    class="bg-slate-900 border border-slate-800 p-1.5 rounded text-xs text-sky-400 font-bold active:bg-sky-400 active:text-slate-950"
-                                >
-                                    ▼
-                                </button>
-                                <button 
-                                    onMouseDown={() => { engineState.current.keys["ArrowRight"] = true; }} 
-                                    onMouseUp={() => { engineState.current.keys["ArrowRight"] = false; }} 
-                                    onMouseLeave={() => { engineState.current.keys["ArrowRight"] = false; }} 
-                                    class="bg-slate-900 border border-slate-800 p-1.5 rounded text-xs text-sky-400 font-bold active:bg-sky-400 active:text-slate-950"
-                                >
-                                    ▶
-                                </button>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            );
-        }
-
-        // ==================== 啟動 React App ====================
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
-</html>
+                if (state.roundState === "active") {
+                    const now = Date.now();
+                    const progressFactor = (35 - state.gameTimer) / 35;
+                    const spawnInterval = Math.max(450, 1300 - progressFactor * 850); 
+
+                    if (now - state.lastSnowballSpawn > spawnInterval) {
+                        state.lastSnowballSpawn = now;
+                        const isHuge = Math.random() < (0.2 + progressFactor * 0.15);
+                        state.snowballs.push({
+                            id: `ball_${now}`,
+                            x: Math.random() * 300 - 150, 
+                            z: 200,                        
+                            size: isHuge ? "large" : "small",
+                            damage: isHuge ? 10 : 5,
+                            speed: (Math.random() * 2 + 3
